@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>3桁の推理ゲーム：ヒット＆ブロー</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #2c3e50; color: white; padding: 20px; }
+        .container { background: #34495e; padding: 20px; border-radius: 15px; display: inline-block; width: 350px; min-height: 400px; position: relative; }
+        
+        /* スタート画面の設定 */
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #2980b9; border-radius: 15px; z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .rule-box { text-align: left; font-size: 14px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px; line-height: 1.6; }
+        
+        input { font-size: 24px; width: 120px; text-align: center; margin: 10px; border-radius: 5px; border: none; }
+        button { font-size: 18px; padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #d35400; }
+        
+        .log { text-align: left; margin-top: 20px; background: #ecf0f1; color: #333; padding: 10px; border-radius: 5px; height: 150px; overflow-y: auto; font-family: monospace; }
+        .chance { font-size: 20px; color: #f1c40f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen">
+        <h2>ヒット＆ブロー</h2>
+        <div class="rule-box">
+            <strong>【ルール説明】</strong><br>
+            重複しない3桁の数字を当ててください。<br><br>
+            ・<strong>ヒット：</strong>数字も場所も合っている<br>
+            ・<strong>ブロー：</strong>数字は合っているが場所が違う<br><br>
+            10回以内に3ヒットさせれば勝利です！
+        </div>
+        <button onclick="startGame()">ゲーム開始！</button>
+    </div>
+
+    <h1>推測せよ！</h1>
+    <p>残りチャンス: <span class="chance" id="chance">10</span> 回</p>
+    
+    <input type="text" id="guess" maxlength="3" placeholder="3桁入力">
+    <button onclick="play()">予想</button>
+
+    <div class="log" id="log">--- 履歴 ---</div>
+</div>
+
+<script>
+    let answer = [];
+    let attempts = 10;
+
+    // ゲーム開始処理
+    function startGame() {
+        // 数字の準備
+        let digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        digits.sort(() => Math.random() - 0.5);
+        answer = digits.slice(0, 3);
+        
+        // スタート画面を隠す
+        document.getElementById("start-screen").style.display = "none";
+        console.log("正解(デバッグ用):", answer.join("")); // ズルしたい時用（笑）
+    }
+
+    function play() {
+        const input = document.getElementById("guess").value;
+        const log = document.getElementById("log");
+        const chanceDisp = document.getElementById("chance");
+        
+        // 入力チェック（3桁・数字・重複なし）
+        if (input.length !== 3 || isNaN(input)) {
+            alert("3桁の数字を入力してください");
+            return;
+        }
+        
+        const guessArray = input.split("").map(Number);
+        const uniqueCheck = new Set(guessArray);
+        if (uniqueCheck.size !== 3) {
+            alert("同じ数字を2回使えません！");
+            return;
+        }
+
+        attempts--;
+        chanceDisp.innerText = attempts;
+
+        let hit = 0;
+        let blow = 0;
+
+        for (let i = 0; i < 3; i++) {
+            if (guessArray[i] === answer[i]) {
+                hit++;
+            } else if (answer.includes(guessArray[i])) {
+                blow++;
+            }
+        }
+
+        // 履歴の追加
+        const resultText = `[${10 - attempts}回目] ${input} → ${hit}H / ${blow}B`;
+        const newLog = document.createElement("div");
+        newLog.innerText = resultText;
+        log.prepend(newLog);
+
+        if (hit === 3) {
+            alert("🎉 おめでとう！正解です！ 🎉");
+            location.reload();
+        } else if (attempts <= 0) {
+            alert("無念…ゲームオーバー。正解は " + answer.join("") + " でした。");
+            location.reload();
+        }
+        
+        document.getElementById("guess").value = "";
+        document.getElementById("guess").focus();
+    }
+</script>
+
+</body>
+</html>
