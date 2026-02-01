@@ -5,16 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>アニマル・ダービー</title>
     <style>
-        body { font-family: sans-serif; background: #27ae60; color: white; text-align: center; margin: 0; padding: 20px; }
-        .track-field { background: #2ecc71; width: 95%; max-width: 600px; margin: 20px auto; padding: 10px; border: 5px solid #fff; border-radius: 10px; position: relative; overflow: hidden; }
-        .lane { height: 45px; border-bottom: 1px dashed rgba(255,255,255,0.4); position: relative; display: flex; align-items: center; }
-        .animal { position: absolute; left: 0; font-size: 30px; transition: left 0.1s linear; z-index: 2; }
+        body { font-family: sans-serif; background: #27ae60; color: white; text-align: center; margin: 0; padding: 10px; }
+        /* トラック全体：高さを自動調整にしてバグを防ぐ */
+        .track-field { 
+            background: #2ecc71; width: 95%; max-width: 600px; 
+            margin: 20px auto; padding: 10px; border: 5px solid #fff; 
+            border-radius: 10px; position: relative; overflow: hidden;
+        }
+        .lane { height: 50px; border-bottom: 1px dashed rgba(255,255,255,0.4); position: relative; display: flex; align-items: center; }
+        .animal { position: absolute; left: 0; font-size: 32px; transition: left 0.1s linear; z-index: 2; }
+        /* 赤いゴールライン */
         .goal-line { position: absolute; right: 60px; top: 0; bottom: 0; width: 6px; background: #e74c3c; z-index: 1; }
-        .controls { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
-        #status-area { font-size: 22px; font-weight: bold; background: #f39c12; color: #2c3e50; padding: 10px; border-radius: 10px; display: none; margin-bottom: 15px; }
-        select { font-size: 20px; padding: 10px; border-radius: 5px; }
-        button { font-size: 20px; padding: 10px 25px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #result-msg { font-size: 24px; margin-top: 20px; min-height: 80px; }
+        
+        .controls { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; display: inline-block; margin-bottom: 10px; }
+        #status-area { font-size: 20px; font-weight: bold; background: #f39c12; color: #2c3e50; padding: 10px; border-radius: 10px; display: none; margin-bottom: 10px; }
+        
+        select { font-size: 18px; padding: 8px; border-radius: 5px; }
+        button { font-size: 18px; padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #result-msg { font-size: 22px; margin-top: 15px; min-height: 100px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -31,18 +39,20 @@
 
     <div class="track-field" id="track">
         <div class="goal-line"></div>
-    </div>
+        </div>
 
     <div id="result-msg"></div>
 
 <script>
-    // 10種類の動物たち（「福」を「🐢 (カメ)」に変更しました）
-    const animals = ["🐱", "🐰", "🐢", "🦁", "🐼", "🐨", "🐯", "🦓", "🦄", "🐵"];
+    // 「福」を消して、ハムスター(🐹)に変えました！
+    const animals = ["🐱", "🐰", "🐹", "🦁", "🐼", "🐨", "🐯", "🦓", "🦄", "🐵"];
     const track = document.getElementById("track");
     const select = document.getElementById("prediction");
-    const goalX_percentage = 85; // ゴール判定位置のパーセンテージ
-    let winnerIndex = -1; // 1着が決まったら更新される
+    
+    // ゴールラインの見た目と判定を一致させるための数値
+    const goalLinePercent = 85; 
 
+    // 初期設定
     animals.forEach((emoji, i) => {
         let opt = document.createElement("option");
         opt.value = i;
@@ -62,10 +72,51 @@
         document.getElementById("ui").style.display = "none";
         
         const racers = animals.map((_, i) => ({ id: `animal-${i}`, pos: 0, isFinished: false }));
+        let winnerIndex = -1;
 
         const interval = setInterval(() => {
-            let allRacersStopped = true;
+            let allStopped = true;
 
             racers.forEach((racer, index) => {
-                // 既にゴールしている動物は動かさない
-                if (racer.isFinished) {
+                if (!racer.isFinished) {
+                    allStopped = false;
+                    // 進むスピードを少し控えめに（ドキドキ感）
+                    racer.pos += Math.random() * 0.8;
+                    document.getElementById(racer.id).style.left = racer.pos + "%";
+
+                    // 【重要】ラインを「完全に越えたら」止まる＆判定
+                    if (racer.pos >= goalLinePercent) {
+                        racer.isFinished = true;
+                        if (winnerIndex === -1) {
+                            winnerIndex = index;
+                            showResult(winnerIndex);
+                        }
+                    }
+                }
+            });
+
+            if (allStopped) clearInterval(interval);
+        }, 50);
+    }
+
+    function showResult(winIdx) {
+        const prediction = document.getElementById("prediction").value;
+        const msg = document.getElementById("result-msg");
+        const winEmoji = animals[winIdx];
+
+        if (parseInt(prediction) === winIdx) {
+            msg.innerHTML = `結果：<span style="font-size:40px">${winEmoji}</span> が1着！<br><span style="color:#f1c40f; font-weight:bold;">的中！おめでとう！🎉</span>`;
+        } else {
+            msg.innerHTML = `結果：<span style="font-size:40px">${winEmoji}</span> が1着！<br>残念、ハズレです...`;
+        }
+
+        const reBtn = document.createElement("button");
+        reBtn.innerText = "もう一度遊ぶ";
+        reBtn.onclick = () => location.reload();
+        reBtn.style.display = "block";
+        reBtn.style.margin = "15px auto";
+        msg.appendChild(reBtn);
+    }
+</script>
+</body>
+</html>
