@@ -3,34 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <meta property="og:title" content="【白熱】アニマル・ダービー！">
-    <meta property="og:description" content="優勝するのはどの動物？1着を予想しよう！">
-    <meta property="og:type" content="website">
-
     <title>アニマル・ダービー</title>
     <style>
         body { font-family: sans-serif; background: #27ae60; color: white; text-align: center; margin: 0; padding: 20px; }
-        .track-field { background: #2ecc71; width: 95%; max-width: 600px; margin: 20px auto; padding: 10px; border: 5px solid #fff; border-radius: 10px; position: relative; }
+        .track-field { background: #2ecc71; width: 95%; max-width: 600px; margin: 20px auto; padding: 10px; border: 5px solid #fff; border-radius: 10px; position: relative; overflow: hidden; /* はみ出しを隠す */ }
         .lane { height: 45px; border-bottom: 1px dashed rgba(255,255,255,0.4); position: relative; display: flex; align-items: center; }
-        .animal { position: absolute; left: 0; font-size: 30px; transition: left 0.15s linear; }
-        .goal-line { position: absolute; right: 40px; top: 0; bottom: 0; width: 4px; background: #e74c3c; z-index: 1; }
+        .animal { position: absolute; left: 0; font-size: 30px; transition: left 0.1s linear; z-index: 2; }
+        .goal-line { position: absolute; right: 60px; top: 0; bottom: 0; width: 6px; background: #e74c3c; z-index: 1; }
         .controls { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
-        select { font-size: 20px; padding: 10px; border-radius: 5px; cursor: pointer; background: white; }
+        #status-area { font-size: 22px; font-weight: bold; background: #f39c12; color: #2c3e50; padding: 10px; border-radius: 10px; display: none; margin-bottom: 15px; }
+        select { font-size: 20px; padding: 10px; border-radius: 5px; }
         button { font-size: 20px; padding: 10px 25px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:hover { background: #d35400; }
-        #result-msg { font-size: 24px; margin-top: 20px; height: 60px; }
+        #result-msg { font-size: 24px; margin-top: 20px; min-height: 80px; }
     </style>
 </head>
 <body>
 
     <h1>🏁 アニマル・ダービー 🏁</h1>
 
+    <div id="status-area">あなたの予想：<span id="my-pick"></span></div>
+
     <div class="controls" id="ui">
-        <p>1着になる動物を予想してね！</p>
-        <select id="prediction">
-            </select>
-        <br>
+        <p>1着を予想してね！</p>
+        <select id="prediction"></select><br>
         <button onclick="startRace()">レース開始！</button>
     </div>
 
@@ -41,13 +36,12 @@
     <div id="result-msg"></div>
 
 <script>
-    // 10種類の動物たち
-    const animals = ["🐱", "🐰", "🦊", "🦁", "🐼", "🐨", "🐯", "🦓", "🦄", "🐵"];
+    const animals = ["🐱", "🐰", "福", "🦁", "🐼", "🐨", "🐯", "🦓", "🦄", "🐵"];
     const track = document.getElementById("track");
     const select = document.getElementById("prediction");
-    const goalX = 85; // ゴール位置（%）
+    const goalX = 85; // 判定用のゴールライン位置（%）
+    const finishX = 110; // 実際に走り抜ける位置（%）
 
-    // 初期化：コースと選択肢の作成
     animals.forEach((emoji, i) => {
         let opt = document.createElement("option");
         opt.value = i;
@@ -61,29 +55,36 @@
     });
 
     function startRace() {
+        const pickIdx = select.value;
+        document.getElementById("my-pick").innerText = animals[pickIdx];
+        document.getElementById("status-area").style.display = "inline-block";
         document.getElementById("ui").style.display = "none";
-        document.getElementById("result-msg").innerText = "位置について... スタート！";
         
-        const racers = animals.map((_, i) => ({ id: `animal-${i}`, pos: 0 }));
+        const racers = animals.map((_, i) => ({ id: `animal-${i}`, pos: 0, finished: false }));
+        let winnerIndex = -1;
 
         const interval = setInterval(() => {
-            let winnerIndex = -1;
+            let allFinished = true;
 
             racers.forEach((racer, index) => {
-                // スピードをゆっくりに調整（0〜1.2%ずつ進む）
-                racer.pos += Math.random() * 1.2;
-                document.getElementById(racer.id).style.left = racer.pos + "%";
+                // まだ走り抜けていないなら進む
+                if (racer.pos < finishX) {
+                    racer.pos += Math.random() * 1.2;
+                    document.getElementById(racer.id).style.left = racer.pos + "%";
+                    allFinished = false;
+                }
 
+                // 1着がラインを越えた瞬間を記録
                 if (racer.pos >= goalX && winnerIndex === -1) {
                     winnerIndex = index;
+                    finishRace(winnerIndex); // 先に判定だけ出す
                 }
             });
 
-            if (winnerIndex !== -1) {
+            if (allFinished) {
                 clearInterval(interval);
-                finishRace(winnerIndex);
             }
-        }, 80); // 更新間隔を少し遅くして滑らかに
+        }, 80);
     }
 
     function finishRace(winnerIndex) {
@@ -91,19 +92,21 @@
         const msg = document.getElementById("result-msg");
         const winnerEmoji = animals[winnerIndex];
 
-        if (parseInt(prediction) === winnerIndex) {
-            msg.innerHTML = `結果：<span style="font-size:40px">${winnerEmoji}</span> が1着！<br>的中！おめでとうございます！🎉`;
-            document.body.style.backgroundColor = "#f1c40f";
-        } else {
-            msg.innerHTML = `結果：<span style="font-size:40px">${winnerEmoji}</span> が1着！<br>残念、ハズレです...`;
-        }
+        setTimeout(() => {
+            if (parseInt(prediction) === winnerIndex) {
+                msg.innerHTML = `結果：<span style="font-size:40px">${winnerEmoji}</span> が1着！<br>的中！おめでとう！🎉`;
+                document.body.style.backgroundColor = "#f1c40f";
+            } else {
+                msg.innerHTML = `結果：<span style="font-size:40px">${winnerEmoji}</span> が1着！<br>残念、ハズレです...`;
+            }
 
-        const reBtn = document.createElement("button");
-        reBtn.innerText = "もう一度遊ぶ";
-        reBtn.style.display = "block";
-        reBtn.style.margin = "20px auto";
-        reBtn.onclick = () => location.reload();
-        msg.appendChild(reBtn);
+            const reBtn = document.createElement("button");
+            reBtn.innerText = "もう一度遊ぶ";
+            reBtn.style.display = "block";
+            reBtn.style.margin = "20px auto";
+            reBtn.onclick = () => location.reload();
+            msg.appendChild(reBtn);
+        }, 1000); // ゴール後、少し余韻を持たせてから結果表示
     }
 </script>
 </body>
