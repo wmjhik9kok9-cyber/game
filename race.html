@@ -6,15 +6,15 @@
     <title>アニマル・ダービー</title>
     <style>
         body { font-family: sans-serif; background: #27ae60; color: white; text-align: center; margin: 0; padding: 10px; }
-        /* トラック全体：高さを自動調整にしてバグを防ぐ */
+        
         .track-field { 
             background: #2ecc71; width: 95%; max-width: 600px; 
             margin: 20px auto; padding: 10px; border: 5px solid #fff; 
             border-radius: 10px; position: relative; overflow: hidden;
         }
         .lane { height: 50px; border-bottom: 1px dashed rgba(255,255,255,0.4); position: relative; display: flex; align-items: center; }
-        .animal { position: absolute; left: 0; font-size: 32px; transition: left 0.1s linear; z-index: 2; }
-        /* 赤いゴールライン */
+        .animal { position: absolute; left: 0; font-size: 32px; transition: left 0.05s linear; z-index: 2; } /* 動きをより細かく */
+        
         .goal-line { position: absolute; right: 60px; top: 0; bottom: 0; width: 6px; background: #e74c3c; z-index: 1; }
         
         .controls { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; display: inline-block; margin-bottom: 10px; }
@@ -39,17 +39,16 @@
 
     <div class="track-field" id="track">
         <div class="goal-line"></div>
-        </div>
+    </div>
 
     <div id="result-msg"></div>
 
 <script>
-    // 「福」を消して、ハムスター(🐹)に変えました！
     const animals = ["🐱", "🐰", "🐹", "🦁", "🐼", "🐨", "🐯", "🦓", "🦄", "🐵"];
     const track = document.getElementById("track");
     const select = document.getElementById("prediction");
     
-    // ゴールラインの見た目と判定を一致させるための数値
+    // ゴールラインの位置（%）
     const goalLinePercent = 85; 
 
     // 初期設定
@@ -70,32 +69,28 @@
         document.getElementById("my-pick").innerText = animals[pickIdx];
         document.getElementById("status-area").style.display = "inline-block";
         document.getElementById("ui").style.display = "none";
+        document.getElementById("result-msg").innerHTML = ""; // メッセージリセット
         
-        const racers = animals.map((_, i) => ({ id: `animal-${i}`, pos: 0, isFinished: false }));
-        let winnerIndex = -1;
+        const racers = animals.map((_, i) => ({ id: `animal-${i}`, pos: 0 }));
+        let isRaceOver = false;
 
+        // 0.05秒ごとに位置を更新
         const interval = setInterval(() => {
-            let allStopped = true;
-
             racers.forEach((racer, index) => {
-                if (!racer.isFinished) {
-                    allStopped = false;
-                    // 進むスピードを少し控えめに（ドキドキ感）
-                    racer.pos += Math.random() * 0.8;
-                    document.getElementById(racer.id).style.left = racer.pos + "%";
+                // すでに誰かがゴールしていたら、もう誰も動かさない（完全停止）
+                if (isRaceOver) return;
 
-                    // 【重要】ラインを「完全に越えたら」止まる＆判定
-                    if (racer.pos >= goalLinePercent) {
-                        racer.isFinished = true;
-                        if (winnerIndex === -1) {
-                            winnerIndex = index;
-                            showResult(winnerIndex);
-                        }
-                    }
+                // ランダムに前進
+                racer.pos += Math.random() * 0.8;
+                document.getElementById(racer.id).style.left = racer.pos + "%";
+
+                // 【ここがポイント】誰かがラインを超えたら...
+                if (racer.pos >= goalLinePercent) {
+                    isRaceOver = true;         // レース終了フラグを立てる
+                    clearInterval(interval);   // タイマーを強制停止（全員止まる）
+                    showResult(index);         // 結果発表
                 }
             });
-
-            if (allStopped) clearInterval(interval);
         }, 50);
     }
 
