@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Shop RPG</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: "Courier New", Courier, monospace;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 左上の戻るボタン */
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 5px;
+            background: #222;
+            box-shadow: 0 4px 0 #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            z-index: 10;
+        }
+        .back-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .game-screen {
+            background-color: #000;
+            border: 4px solid #fff;
+            border-radius: 8px;
+            width: 95%;
+            max-width: 500px;
+            padding: 15px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* ヘッダー周り */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 0 5px;
+        }
+        .stage-info { color: #f1c40f; font-weight: bold; font-size: 1.2em;}
+
+        /* メニューボタンエリア */
+        .menu-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+        
+        .menu-btn {
+            border: 1px solid #fff;
+            color: white;
+            padding: 12px 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9em;
+            flex: 1;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.1s;
+            position: relative;
+        }
+        
+        /* 育成ボタン（青） */
+        .train-btn {
+            background: #2980b9;
+            box-shadow: 0 6px 0 #154360;
+            border-color: #5dade2;
+        }
+        .train-btn:active {
+            box-shadow: 0 0 0 #154360;
+            transform: translateY(6px);
+            background: #2471a3;
+        }
+
+        /* 装備ボタン（オレンジ） */
+        .shop-btn-header {
+            background: #e67e22;
+            box-shadow: 0 6px 0 #a04000;
+            border-color: #f5b041;
+        }
+        .shop-btn-header:active {
+            box-shadow: 0 0 0 #a04000;
+            transform: translateY(6px);
+            background: #d35400;
+        }
+
+        /* 敵エリア */
+        .enemy-area { margin-bottom: 15px; min-height: 120px;}
+        .enemy-icon { font-size: 70px; display: inline-block; transition: transform 0.1s; }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0% { transform: translate(0, 0); } 25% { transform: translate(-5px, 5px); } 50% { transform: translate(5px, -5px); } 75% { transform: translate(-5px, 5px); } 100% { transform: translate(0, 0); } }
+        .dead-anim { animation: fadeOut 1s forwards; }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.5); } }
+        .guard-anim { animation: guardFlash 0.3s; }
+        @keyframes guardFlash { 0% { background-color: #000; } 50% { background-color: #3498db; } 100% { background-color: #000; } }
+        .flash { animation: flash 0.2s; }
+        @keyframes flash { 0% { background-color: #fff; } 100% { background-color: #000; } }
+
+        /* バー共通 */
+        .bar-container { width: 100%; background-color: #444; height: 12px; border-radius: 6px; overflow: hidden; }
+        .hp-fill { background-color: #e74c3c; height: 100%; width: 100%; transition: width 0.3s; }
+        .mp-fill { background-color: #3498db; height: 100%; width: 100%; transition: width 0.3s; }
+        .xp-fill { background-color: #f1c40f; height: 100%; width: 0%; transition: width 0.3s; }
+
+        /* 勇者ステータス */
+        .hero-area { text-align: left; padding: 10px; background: #222; border-radius: 8px; margin-bottom: 10px; }
+        .stat-row { margin-top: 5px; font-size: 0.85em; }
+        .stat-label { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .equip-info { font-size: 0.8em; color: #aaa; margin-top: 2px; border-top: 1px solid #444; padding-top:2px;}
+
+        /* ログ */
+        .message-box {
+            border: 1px solid #666;
+            background-color: #111;
+            height: 80px;
+            overflow-y: scroll;
+            text-align: left;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+        .message-box p { margin: 2px 0; border-bottom: 1px dashed #333; }
+        .log-new { color: #fff; font-weight: bold; }
+        .log-damage { color: #ff6b6b; }
+        .log-guard { color: #3498db; font-weight: bold; } 
+        .log-heal { color: #55efc4; }
+        .log-level { color: #f1c40f; }
+        .log-gold { color: #f39c12; }
+
+        /* コマンドボタン */
+        .command-area { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button.cmd-btn {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 0 #111;
+            transition: transform 0.05s, box-shadow 0.05s;
+        }
+        button.cmd-btn:hover { background-color: #444; border-color: #fff; }
+        button.cmd-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #111;
+        }
+        button.cmd-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; transform: translateY(2px); }
+        
+        #next-btn, #restart-btn { 
+            background-color: #d35400; 
+            border-color: #e67e22; 
+            grid-column: 1 / 3; 
+            display: none; 
+            padding: 15px; 
+            font-weight: bold;
+            box-shadow: 0 4px 0 #a04000;
+            transition: all 0.1s;
+        }
+        #next-btn:active, #restart-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* --- モーダル --- */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 100;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-content {
+            width: 90%;
+            height: 90%;
+            overflow-y: auto;
+            text-align: left;
+            padding: 10px;
+            padding-bottom: 30px;
+        }
+        .menu-header {
+            text-align: center;
+            border-bottom: 2px solid #fff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+        .sp-display { color: #f1c40f; font-size: 1.2em; font-weight: bold; }
+        .gold-display { color: #f39c12; font-size: 1.2em; font-weight: bold; }
+        
+        .upgrade-section { margin-bottom: 20px; border: 1px solid #444; padding: 5px; border-radius: 5px; }
+        .upgrade-title { font-size: 1.0em; color: #3498db; margin-bottom: 5px; border-bottom: 1px solid #333; font-weight: bold; padding: 3px;}
+        .shop-title { color: #e67e22; }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .upgrade-info div:first-child { font-weight: bold; font-size: 0.9em; }
+        .upgrade-info div:last-child { font-size: 0.8em; color: #aaa; }
+        
+        .upgrade-btn {
+            background: #27ae60;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            min-width: 60px;
+            font-size: 0.85em;
+            box-shadow: 0 3px 0 #196f3d;
+            transition: all 0.1s;
+        }
+        .upgrade-btn:active { transform: translateY(3px); box-shadow: none; }
+        .upgrade-btn:disabled { background: #555; color: #999; cursor: not-allowed; box-shadow: none; transform: translateY(1px); }
+        
+        .shop-buy-btn { background: #e67e22; box-shadow: 0 3px 0 #a04000; }
+        .shop-buy-btn:active { box-shadow: none; }
+        .shop-buy-btn:disabled { background: #555; box-shadow: none; }
+
+        .close-menu-btn {
+            margin-top: 10px;
+            padding: 12px 30px;
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 0 #922b21;
+            transition: all 0.1s;
+        }
+        .close-menu-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        .levelup-content { text-align: center; animation: popIn 0.5s; }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .levelup-title { font-size: 3.5rem; color: #f1c40f; text-shadow: 0 0 15px #e67e22; margin: 0; font-weight: bold; font-style: italic; }
+        .levelup-sp { font-size: 2rem; color: #2ecc71; font-weight: bold; margin-bottom: 40px; }
+        
+        .levelup-ok-btn { 
+            padding: 15px 50px; 
+            font-size: 1.5rem; 
+            background: #3498db; 
+            color: white; 
+            border: 2px solid #fff; 
+            border-radius: 50px; 
+            cursor: pointer;
+            box-shadow: 0 6px 0 #1a5276;
+            transition: all 0.1s;
+        }
+        .levelup-ok-btn:active { transform: translateY(6px); box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-btn">⬅ メニュー</a>
+
+    <div class="game-screen" id="game-screen">
+        
+        <div class="header-top">
+            <div class="stage-info">STAGE <span id="stage-num">1</span></div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="menu-btn train-btn" onclick="openTraining()">
+                <span>💪 育成</span>
+                <span>SP: <span id="btn-sp">0</span></span>
+            </button>
+            <button class="menu-btn shop-btn-header" onclick="openShop()">
+                <span>⚔️ 装備</span>
+                <span><span id="btn-gold">0</span>G</span>
+            </button>
+        </div>
+
+        <div class="enemy-area">
+            <div id="enemy-name" style="font-size: 1.1em; margin-bottom: 5px;">Enemy</div>
+            <div id="enemy-icon" class="enemy-icon">👾</div>
+            <div class="bar-container" style="width: 60%; margin: 5px auto;">
+                <div id="enemy-hp-bar" class="hp-fill"></div>
+            </div>
+            <div style="font-size:0.8em; color:#aaa;">HP: <span id="enemy-hp-text">?</span></div>
+        </div>
+
+        <div class="hero-area">
+            <div class="stat-label">
+                <span>Lv.<span id="hero-lv" style="color:#f1c40f; font-weight:bold;">1</span> 勇者</span>
+                <span style="font-size:0.8em;">ATK:<span id="hero-atk">10</span> DEF:<span id="hero-def">0</span></span>
+            </div>
+            <div class="bar-container" style="height: 4px; margin-bottom: 4px;">
+                <div id="hero-xp-bar" class="xp-fill"></div>
+            </div>
+            
+            <div class="equip-info">
+                E: <span id="hero-weapon">素手</span> / <span id="hero-armor">私服</span>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label">
+                    <span>HP</span><span><span id="hero-hp"></span> / <span id="hero-max-hp"></span></span>
+                </div>
+                <div class="bar-container"><div id="hero-hp-bar" class="hp-fill"></div></div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label">
+                    <span>MP</span><span><span id="hero-mp"></span> / <span id="hero-max-mp"></span></span>
+                </div>
+                <div class="bar-container" style="background-color: #223;"><div id="hero-mp-bar" class="mp-fill"></div></div>
+            </div>
+        </div>
+
+        <div class="message-box" id="msg-box">
+            <p>旅が始まった。</p>
+        </div>
+
+        <div class="command-area" id="command-area">
+            <button class="cmd-btn" id="btn-attack" onclick="playerAction('attack')">⚔️ たたかう</button>
+            <button class="cmd-btn skill-btn" id="btn-heal" onclick="playerAction('heal')">🌿 かいふく(8)</button>
+            <button class="cmd-btn skill-btn" id="btn-fire" onclick="playerAction('fire')">🔥 ファイア(5)</button>
+            <button class="cmd-btn skill-btn" id="btn-thunder" onclick="playerAction('thunder')">⚡ サンダー(12)</button>
+            <button class="cmd-btn skill-btn" id="btn-double" onclick="playerAction('double')">⚔️ 2連撃(6)</button>
+            <button class="cmd-btn skill-btn" id="btn-meteor" onclick="playerAction('meteor')">☄️ メテオ(20)</button>
+
+            <button id="next-btn" onclick="nextBattle()">👉 次の敵へ！</button>
+            <button id="restart-btn" onclick="restartGame()">🔄 はじめからやり直す</button>
+        </div>
+
+        <div class="modal-overlay" id="train-modal">
+            <div class="menu-content">
+                <div class="menu-header">
+                    <h2>💪 育成メニュー</h2>
+                    <div class="sp-display">所持SP: <span id="menu-sp">0</span></div>
+                </div>
+
+                <div class="upgrade-section">
+                    <div class="upgrade-title">ステータス強化 (SP使用)</div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>攻撃力 (ATK) +2</div><div>Cost: 1 SP</div></div>
+                        <button class="upgrade-btn" onclick="upgradeStat('atk')">強化</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div>防御力 (DEF) +2</div>
+                            <div style="color:#3498db; font-size:0.8em;">※カット率+3%</div>
+                        </div>
+                        <button class="upgrade-btn" onclick="upgradeStat('def')">強化</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>HP +10 / MP +5</div><div>Cost: 1 SP</div></div>
+                        <button class="upgrade-btn" onclick="upgradeStat('hpmp')">強化</button>
+                    </div>
+                </div>
+
+                <div class="upgrade-section">
+                    <div class="upgrade-title">スキル習得 (SP使用)</div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>🌿 かいふく</div><div>Cost: 1 SP</div></div>
+                        <button class="upgrade-btn" id="buy-heal" onclick="buySkill('heal', 1)">習得</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>🔥 ファイア</div><div>Cost: 2 SP</div></div>
+                        <button class="upgrade-btn" id="buy-fire" onclick="buySkill('fire', 2)">習得</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>⚡ サンダー</div><div>Cost: 3 SP</div></div>
+                        <button class="upgrade-btn" id="buy-thunder" onclick="buySkill('thunder', 3)">習得</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>⚔️ 2連撃</div><div>Cost: 4 SP</div></div>
+                        <button class="upgrade-btn" id="buy-double" onclick="buySkill('double', 4)">習得</button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info"><div>☄️ メテオ</div><div>Cost: 5 SP</div></div>
+                        <button class="upgrade-btn" id="buy-meteor" onclick="buySkill('meteor', 5)">習得</button>
+                    </div>
+                </div>
+
+                <button class="close-menu-btn" onclick="closeAllMenus()">閉じる</button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="shop-modal">
+            <div class="menu-content">
+                <div class="menu-header">
+                    <h2>⚔️ 装備ショップ</h2>
+                    <div class="gold-display">所持金: <span id="menu-gold">0</span>G</div>
+                </div>
+
+                <div class="upgrade-section" style="border-color: #e67e22;">
+                    <div class="upgrade-title shop-title">武器屋 (Gold使用)</div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div id="shop-weapon-name">次の武器</div>
+                            <div>ATK+5 | Cost: <span id="shop-weapon-cost">100</span>G</div>
+                        </div>
+                        <button class="upgrade-btn shop-buy-btn" id="btn-buy-weapon" onclick="buyEquipment('weapon')">購入</button>
+                    </div>
+                </div>
+
+                <div class="upgrade-section" style="border-color: #e67e22;">
+                    <div class="upgrade-title shop-title">防具屋 (Gold使用)</div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div id="shop-armor-name">次の防具</div>
+                            <div style="color:#3498db;">DEF+5 (Cut+7.5%)</div>
+                            <div>Cost: <span id="shop-armor-cost">100</span>G</div>
+                        </div>
+                        <button class="upgrade-btn shop-buy-btn" id="btn-buy-armor" onclick="buyEquipment('armor')">購入</button>
+                    </div>
+                </div>
+
+                <button class="close-menu-btn" onclick="closeAllMenus()">閉じる</button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="levelup-modal" style="text-align:center;">
+            <div class="levelup-content">
+                <div class="levelup-title">LEVEL UP!!</div>
+                <div class="levelup-sp">SKILL POINT +3</div>
+                <button class="levelup-ok-btn" onclick="closeLevelUp()">OK!</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const ENEMY_TYPES = [
+            { name: "スライム", icon: "💧", baseHp: 30, baseAtk: 6, xp: 15, gold: 10 },
+            { name: "コウモリ", icon: "🦇", baseHp: 45, baseAtk: 9, xp: 25, gold: 15 },
+            { name: "ゴブリン", icon: "👺", baseHp: 70, baseAtk: 14, xp: 40, gold: 25 },
+            { name: "スケルトン", icon: "💀", baseHp: 90, baseAtk: 18, xp: 60, gold: 40 },
+            { name: "オオカミ", icon: "🐺", baseHp: 120, baseAtk: 22, xp: 80, gold: 60 },
+            { name: "オーク",   icon: "🐷", baseHp: 160, baseAtk: 28, xp: 110, gold: 80 },
+            { name: "ゴーレム", icon: "🗿", baseHp: 300, baseAtk: 35, xp: 150, gold: 120 },
+            { name: "ドラゴン", icon: "🐉", baseHp: 500, baseAtk: 45, xp: 250, gold: 200 },
+            { name: "魔王",     icon: "😈", baseHp: 1500, baseAtk: 65, xp: 999, gold: 999 }
+        ];
+
+        const WEAPONS = ["素手", "ひのきの棒", "ナイフ", "銅の剣", "鉄の剣", "鋼の剣", "勇者の剣", "伝説の剣", "神々の剣", "最強の剣"];
+        const ARMORS = ["私服", "布の服", "皮の鎧", "銅の鎧", "鉄の鎧", "鋼の鎧", "魔法の鎧", "竜の鎧", "神々の鎧", "最強の鎧"];
+
+        let hero = {};
+        let enemy = {};
+        let stage = 1;
+        let isPlayerTurn = true;
+        let isBattleOver = false;
+
+        restartGame();
+
+        function restartGame() {
+            hero = {
+                lv: 1,
+                hp: 100, maxHp: 100,
+                mp: 30, maxMp: 30,
+                atk: 10,
+                def: 0,
+                xp: 0, nextXp: 50,
+                sp: 1, 
+                gold: 0, 
+                skills: [],
+                weaponLv: 0, 
+                armorLv: 0
+            };
+            stage = 1;
+            document.getElementById('msg-box').innerHTML = "<p>冒険の始まりだ。防御を上げればダメージ激減！</p>";
+            spawnEnemy();
+        }
+
+        function nextBattle() {
+            stage++;
+            spawnEnemy();
+        }
+
+        function spawnEnemy() {
+            let index = Math.min(Math.floor((stage - 1) / 2), ENEMY_TYPES.length - 1);
+            if(Math.random() < 0.2 && index < ENEMY_TYPES.length - 1) index++;
+
+            const base = ENEMY_TYPES[index];
+            const multiplier = 1 + (stage * 0.15); 
+
+            enemy = {
+                name: base.name,
+                icon: base.icon,
+                maxHp: Math.floor(base.baseHp * multiplier),
+                hp: Math.floor(base.baseHp * multiplier),
+                atk: Math.floor(base.baseAtk * multiplier),
+                xp: Math.floor(base.xp * multiplier),
+                gold: Math.floor(base.gold * multiplier)
+            };
+
+            isBattleOver = false;
+            isPlayerTurn = true;
+            
+            document.getElementById('next-btn').style.display = "none";
+            document.getElementById('restart-btn').style.display = "none";
+            document.getElementById('enemy-icon').classList.remove("dead-anim");
+            document.getElementById('enemy-icon').textContent = enemy.icon;
+            document.getElementById('stage-num').innerText = stage;
+            document.getElementById('enemy-name').innerText = enemy.name;
+
+            log(`------------------`);
+            log(`STAGE ${stage}: ${enemy.name} が現れた！`, "log-new");
+            
+            updateUI();
+            toggleCommandButtons(true);
+        }
+
+        // --- バトルロジック ---
+
+        function playerAction(type) {
+            if (isBattleOver || !isPlayerTurn) return;
+
+            let damage = 0;
+            let actName = "";
+            let variance = 0.9 + Math.random() * 0.2; 
+
+            const costs = { 'heal':8, 'fire':5, 'thunder':12, 'double':6, 'meteor':20 };
+            if (costs[type] && hero.mp < costs[type]) {
+                log("MPが足りない！");
+                return;
+            }
+            if (costs[type]) hero.mp -= costs[type];
+
+            switch(type) {
+                case 'attack':
+                    damage = hero.atk;
+                    actName = "攻撃！";
+                    break;
+                case 'heal':
+                    let heal = Math.floor(hero.maxHp * 0.6);
+                    hero.hp = Math.min(hero.hp + heal, hero.maxHp);
+                    log(`回復魔法！ HPが${heal}回復した。`, "log-heal");
+                    updateUI();
+                    endPlayerTurn();
+                    return; 
+                case 'fire':
+                    damage = hero.atk * 2.5;
+                    actName = "ファイア！";
+                    break;
+                case 'thunder':
+                    damage = hero.atk * 4.5;
+                    actName = "サンダー！";
+                    break;
+                case 'double':
+                    damage = (hero.atk * 0.9) * 2;
+                    actName = "2連撃！";
+                    break;
+                case 'meteor':
+                    damage = hero.atk * 8.0;
+                    actName = "メテオ！";
+                    break;
+            }
+
+            damage = Math.floor(damage * variance);
+
+            if (type === 'attack' && Math.random() < 0.15) {
+                damage = Math.floor(damage * 1.5);
+                actName = "会心の一撃！";
+            }
+
+            log(`${actName} ${enemy.name}に${damage}のダメージ！`, type !== 'attack' ? 'log-skill' : 'log-damage');
+            
+            if (type === 'meteor' || type === 'thunder') {
+                document.getElementById('game-screen').classList.remove('flash');
+                void document.getElementById('game-screen').offsetWidth;
+                document.getElementById('game-screen').classList.add('flash');
+            }
+
+            enemy.hp -= damage;
+            updateUI();
+            
+            const enemyIcon = document.getElementById('enemy-icon');
+            enemyIcon.classList.remove('shake');
+            void enemyIcon.offsetWidth; 
+            enemyIcon.classList.add('shake');
+
+            if (enemy.hp <= 0) {
+                winBattle();
+            } else {
+                endPlayerTurn();
+            }
+        }
+
+        function endPlayerTurn() {
+            isPlayerTurn = false;
+            toggleCommandButtons(false);
+            setTimeout(enemyTurn, 800);
+        }
+
+        // 敵ターン：ダメージ計算 (新方式：割合軽減)
+        function enemyTurn() {
+            if (isBattleOver) return;
+
+            // ① 防御によるカット率算出 (係数1.5)
+            let cutPercent = hero.def * 1.5;
+            // 上限95%カット
+            if (cutPercent > 95) cutPercent = 95;
+
+            // ② 倍率に変換 (30%カットなら 0.7倍)
+            let multiplier = (100 - cutPercent) / 100;
+
+            // ③ ダメージ計算
+            let baseDmg = enemy.atk * multiplier;
+            let damage = Math.floor(baseDmg * (0.8 + Math.random() * 0.4));
+            
+            // 最低1ダメージ (完全無効は強すぎるため)
+            damage = Math.max(1, damage);
+
+            hero.hp -= damage;
+            
+            // ログの出し分け（すごく軽減したら青文字で褒める）
+            if (cutPercent >= 50) {
+                log(`${enemy.name}の攻撃！ 鉄壁の守りで${damage}に抑えた！`, "log-guard");
+                document.getElementById('game-screen').classList.remove('guard-anim');
+                void document.getElementById('game-screen').offsetWidth;
+                document.getElementById('game-screen').classList.add('guard-anim');
+            } else {
+                log(`${enemy.name}の攻撃！ ${damage}のダメージを受けた！`, "log-damage");
+            }
+            
+            updateUI();
+
+            if (hero.hp <= 0) {
+                log("💀 勇者は倒れてしまった...", "log-damage");
+                isBattleOver = true;
+                toggleCommandButtons(false);
+                document.getElementById('restart-btn').style.display = "block"; 
+            } else {
+                isPlayerTurn = true;
+                toggleCommandButtons(true);
+            }
+        }
+
+        function winBattle() {
+            isBattleOver = true;
+            document.getElementById('enemy-icon').classList.add("dead-anim");
+            log(`🎉 ${enemy.name}を倒した！`);
+            
+            getExp(enemy.xp);
+            getGold(enemy.gold);
+
+            toggleCommandButtons(false);
+            document.getElementById('next-btn').style.display = "block";
+        }
+
+        function getExp(amount) {
+            hero.xp += amount;
+            while (hero.xp >= hero.nextXp) {
+                levelUp();
+            }
+            updateUI();
+        }
+
+        function getGold(amount) {
+            hero.gold += amount;
+            log(`${amount} ゴールドを手に入れた！`, "log-gold");
+            updateUI();
+        }
+
+        function levelUp() {
+            hero.lv++;
+            hero.xp -= hero.nextXp;
+            hero.nextXp = Math.floor(hero.nextXp * 1.3);
+            hero.hp = hero.maxHp;
+            hero.mp = hero.maxMp;
+            hero.sp += 3;
+            log(`🆙 レベルアップ！Lv.${hero.lv} (SP+3)`, "log-level");
+            document.getElementById('levelup-modal').style.display = 'flex';
+        }
+
+        function closeLevelUp() {
+            document.getElementById('levelup-modal').style.display = 'none';
+        }
+
+        // --- メニュー切り替え ---
+
+        function openTraining() {
+            document.getElementById('train-modal').style.display = 'flex';
+            updateMenuUI();
+        }
+
+        function openShop() {
+            document.getElementById('shop-modal').style.display = 'flex';
+            updateMenuUI();
+        }
+
+        function closeAllMenus() {
+            document.getElementById('train-modal').style.display = 'none';
+            document.getElementById('shop-modal').style.display = 'none';
+            updateUI(); 
+        }
+
+        // --- 強化ロジック ---
+
+        function upgradeStat(type) {
+            if (hero.sp < 1) return;
+            hero.sp--;
+
+            if(type === 'atk') hero.atk += 2;
+            if(type === 'def') hero.def += 2; 
+            if(type === 'hpmp') { hero.maxHp += 10; hero.hp += 10; hero.maxMp += 5; hero.mp += 5; }
+
+            updateMenuUI();
+        }
+
+        function buySkill(skillId, cost) {
+            if (hero.sp < cost) return;
+            if (hero.skills.includes(skillId)) return;
+            hero.sp -= cost;
+            hero.skills.push(skillId);
+            updateMenuUI(); updateUI(); 
+        }
+
+        function buyEquipment(type) {
+            let cost = 0;
+            if (type === 'weapon') {
+                if (hero.weaponLv >= WEAPONS.length - 1) return;
+                cost = (hero.weaponLv + 1) * 100;
+                
+                if (hero.gold >= cost) {
+                    hero.gold -= cost;
+                    hero.weaponLv++;
+                    hero.atk += 5;
+                    log(`⚔️ 武器を新調した！(ATK+5)`, "log-gold");
+                }
+            } else if (type === 'armor') {
+                if (hero.armorLv >= ARMORS.length - 1) return;
+                cost = (hero.armorLv + 1) * 100;
+
+                if (hero.gold >= cost) {
+                    hero.gold -= cost;
+                    hero.armorLv++;
+                    hero.def += 5;
+                    log(`🛡️ 防具を新調した！(DEF+5)`, "log-gold");
+                }
+            }
+            updateMenuUI(); updateUI();
+        }
+
+        function updateMenuUI() {
+            document.getElementById('menu-sp').innerText = hero.sp;
+            document.getElementById('menu-gold').innerText = hero.gold;
+
+            const skills = [
+                { id: 'heal', btn: 'buy-heal' },
+                { id: 'fire', btn: 'buy-fire' },
+                { id: 'thunder', btn: 'buy-thunder' },
+                { id: 'double', btn: 'buy-double' },
+                { id: 'meteor', btn: 'buy-meteor' }
+            ];
+            skills.forEach(s => {
+                const btn = document.getElementById(s.btn);
+                if (hero.skills.includes(s.id)) {
+                    btn.innerText = "習得済"; btn.disabled = true; btn.style.background = "#555";
+                } else {
+                    btn.innerText = "習得"; btn.disabled = false; btn.style.background = "#27ae60";
+                }
+            });
+
+            const statBtns = document.querySelectorAll('#train-modal .upgrade-section:first-child .upgrade-btn');
+            statBtns.forEach(btn => btn.disabled = (hero.sp < 1));
+
+            if (hero.weaponLv < WEAPONS.length - 1) {
+                const wCost = (hero.weaponLv + 1) * 100;
+                document.getElementById('shop-weapon-name').innerText = WEAPONS[hero.weaponLv + 1];
+                document.getElementById('shop-weapon-cost').innerText = wCost;
+                const buyBtn = document.getElementById('btn-buy-weapon');
+                buyBtn.disabled = (hero.gold < wCost);
+                buyBtn.style.background = (hero.gold < wCost) ? "#555" : "#e67e22";
+            } else {
+                document.getElementById('shop-weapon-name').innerText = "最強の武器";
+                document.getElementById('shop-weapon-cost').innerText = "---";
+                const buyBtn = document.getElementById('btn-buy-weapon');
+                buyBtn.disabled = true;
+                buyBtn.innerText = "完売";
+            }
+
+            if (hero.armorLv < ARMORS.length - 1) {
+                const aCost = (hero.armorLv + 1) * 100;
+                document.getElementById('shop-armor-name').innerText = ARMORS[hero.armorLv + 1];
+                document.getElementById('shop-armor-cost').innerText = aCost;
+                const buyBtn = document.getElementById('btn-buy-armor');
+                buyBtn.disabled = (hero.gold < aCost);
+                buyBtn.style.background = (hero.gold < aCost) ? "#555" : "#e67e22";
+            } else {
+                document.getElementById('shop-armor-name').innerText = "最強の防具";
+                document.getElementById('shop-armor-cost').innerText = "---";
+                const buyBtn = document.getElementById('btn-buy-armor');
+                buyBtn.disabled = true;
+                buyBtn.innerText = "完売";
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('hero-lv').innerText = hero.lv;
+            document.getElementById('hero-atk').innerText = hero.atk;
+            document.getElementById('hero-def').innerText = hero.def;
+            document.getElementById('hero-hp').innerText = Math.max(0, hero.hp);
+            document.getElementById('hero-max-hp').innerText = hero.maxHp;
+            document.getElementById('hero-mp').innerText = Math.max(0, hero.mp);
+            document.getElementById('hero-max-mp').innerText = hero.maxMp;
+            
+            document.getElementById('btn-sp').innerText = hero.sp;
+            document.getElementById('btn-gold').innerText = hero.gold;
+
+            document.getElementById('hero-weapon').innerText = WEAPONS[hero.weaponLv];
+            document.getElementById('hero-armor').innerText = ARMORS[hero.armorLv];
+
+            const hpPer = Math.max(0, (hero.hp / hero.maxHp) * 100);
+            const mpPer = Math.max(0, (hero.mp / hero.maxMp) * 100);
+            const xpPer = Math.min(100, (hero.xp / hero.nextXp) * 100);
+            document.getElementById('hero-hp-bar').style.width = `${hpPer}%`;
+            document.getElementById('hero-mp-bar').style.width = `${mpPer}%`;
+            document.getElementById('hero-xp-bar').style.width = `${xpPer}%`;
+            
+            const enemyPer = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+            document.getElementById('enemy-hp-bar').style.width = `${enemyPer}%`;
+            document.getElementById('enemy-hp-text').innerText = Math.max(0, enemy.hp);
+
+            const skillBtns = document.querySelectorAll('.skill-btn');
+            skillBtns.forEach(btn => {
+                const id = btn.id.replace('btn-', ''); 
+                if (hero.skills.includes(id)) btn.style.display = "block";
+                else btn.style.display = "none";
+            });
+        }
+
+        function toggleCommandButtons(enable) {
+            const buttons = document.querySelectorAll('.command-area button:not(#next-btn):not(#restart-btn)');
+            buttons.forEach(btn => {
+                if (btn.style.display !== 'none') btn.disabled = !enable;
+            });
+        }
+
+        function log(text, type = "") {
+            const p = document.createElement('p');
+            p.innerHTML = text;
+            if (type) p.className = type;
+            const box = document.getElementById('msg-box');
+            box.insertBefore(p, box.firstChild);
+        }
+    </script>
+</body>
+</html>
