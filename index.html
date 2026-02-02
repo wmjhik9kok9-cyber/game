@@ -3,50 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="じさくゲームセンター">
-    <meta property="og:description" content="パズル・レース・シューティング！自作ゲームで遊ぼう！">
-    <meta property="og:image" content="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Video%20Game.png">
-    
-    <title>マイゲーム・コレクション</title>
+    <title>Hiroki's Game Center</title>
+    <meta property="og:title" content="Hiroki's Game Center">
+    <meta property="og:description" content="自作ゲームのコレクションサイトです。暇つぶしにどうぞ！">
+    <meta property="og:type" content="website">
+
     <style>
-        body { text-align: center; font-family: sans-serif; background: #2c3e50; color: white; padding: 30px 10px; margin: 0; }
-        h1 { margin-bottom: 10px; font-size: 28px; }
-        p { color: #bdc3c7; margin-bottom: 30px; }
-        
-        .btn-container { 
-            display: flex; flex-direction: column; align-items: center; gap: 20px; 
-            max-width: 400px; margin: 0 auto;
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
         }
-        
-        .game-card { 
-            background: #34495e; padding: 20px; border-radius: 15px; width: 90%;
-            text-decoration: none; color: white; font-size: 20px; font-weight: bold;
-            border: 3px solid #f1c40f; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        h1 {
+            color: #00d2ff;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            margin-bottom: 40px;
+        }
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 10px;
+            width: 300px;
+            padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .game-card:hover { background: #f1c40f; color: #2c3e50; transform: translateY(-5px); }
-        .icon { font-size: 30px; }
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 210, 255, 0.2);
+            border-color: #00d2ff;
+        }
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .game-desc {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+        footer {
+            margin-top: 50px;
+            color: #666;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
-    <h1>🎮 じさくゲームセンター 🎮</h1>
-    <p>遊びたいゲームを選んでね！</p>
-    
-    <div class="btn-container">
+
+    <h1>🎮 Hiroki's Game Center</h1>
+
+    <div class="game-container">
         <a href="hit-and-blow.html" class="game-card">
-            <span class="icon">🔢</span> ヒット＆ブロー
-        </a>
-        
-        <a href="race.html" class="game-card">
-            <span class="icon">🏁</span> アニマル・ダービー
+            <div class="game-icon">🔢</div>
+            <div class="game-title">Hit & Blow</div>
+            <div class="game-desc">
+                隠された数字を当てる推理ゲーム。<br>
+                頭の体操に最適！
+            </div>
         </a>
 
-        <a href="shooting.html" class="game-card" style="border-color: #e74c3c; background: #2c2c54;">
-            <span class="icon">🚀</span> 進化するシューティング
+        <a href="race.html" class="game-card">
+            <div class="game-icon">🐎</div>
+            <div class="game-title">Animal Derby</div>
+            <div class="game-desc">
+                どの動物が1位になるか予想しよう！<br>
+                ドキドキのレースゲーム。
+            </div>
+        </a>
+
+        <a href="shooting.html" class="game-card">
+            <div class="game-icon">🚀</div>
+            <div class="game-title">Evolving Shooting</div>
+            <div class="game-desc">
+                敵を倒して自機を強化せよ！<br>
+                進化するシューティング。
+            </div>
+        </a>
+
+        <a href="stock.html" class="game-card">
+            <div class="game-icon">📈</div>
+            <div class="game-title">Stock Trader</div>
+            <div class="game-desc">
+                安く買って高く売れ！<br>
+                目指せ億万長者デイトレード。
+            </div>
         </a>
     </div>
 
-    <br><br>
-    <small>© 2024 My Game Center</small>
+    <footer>
+        © 2026 Hiroki Games
+    </footer>
+
 </body>
 </html>

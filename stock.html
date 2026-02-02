@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デイトレーダー・サバイバル v6</title>
+    <style>
+        body { margin: 0; background-color: #0f172a; color: #fff; font-family: sans-serif; text-align: center; overflow: hidden; }
+        .back-btn { position: absolute; top: 10px; left: 10px; text-decoration: none; background: rgba(255,255,255,0.2); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 10; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 10px; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        /* ステータスエリア */
+        .status-panel { background: #1e293b; padding: 10px; border-radius: 10px; margin-top: 35px; display: flex; flex-direction: column; gap: 5px; }
+        
+        .top-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 5px; }
+        .total-label { font-size: 14px; color: #94a3b8; }
+        .total-asset { font-size: 26px; font-weight: bold; color: #f1c40f; }
+        .timer { font-size: 20px; font-weight: bold; color: #fff; background: #ef4444; padding: 2px 8px; border-radius: 5px; }
+
+        .details-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; }
+        .detail-item { background: #0f172a; padding: 5px; border-radius: 5px; }
+        .d-label { font-size: 10px; color: #94a3b8; display: block; }
+        .d-value { font-size: 14px; font-weight: bold; }
+        
+        .plus { color: #2ecc71; }
+        .minus { color: #e74c3c; }
+
+        /* チャートエリア */
+        #chart-container { flex-grow: 1; position: relative; margin: 10px 0; border: 1px solid #334155; background: #020617; border-radius: 5px; }
+        canvas { width: 100%; height: 100%; display: block; }
+        #current-price { position: absolute; top: 10px; right: 10px; font-size: 28px; font-weight: bold; color: #2ecc71; text-shadow: 0 0 5px rgba(0,0,0,0.8); pointer-events: none; }
+
+        /* 取引パネル */
+        .trade-panel { background: #1e293b; padding: 15px; border-radius: 15px 15px 0 0; }
+        
+        .quantity-control { display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 15px; }
+        input[type="number"] { width: 90px; padding: 10px; font-size: 18px; border-radius: 5px; border: none; text-align: center; background: #334155; color: white; font-weight: bold; }
+        
+        .q-btn { background: #475569; border: none; color: white; padding: 10px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.1s; }
+        .q-btn:active { transform: scale(0.95); background: #64748b; }
+        .btn-clear { background: #64748b; color: #cbd5e1; }
+        .btn-max { color: #f1c40f; border: 1px solid #f1c40f; background: rgba(241, 196, 15, 0.1); }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .main-btn { padding: 15px; font-size: 20px; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; transition: 0.1s; display: flex; flex-direction: column; align-items: center; }
+        .main-btn span { font-size: 12px; margin-top: 5px; opacity: 0.8; font-weight: normal;}
+        
+        .btn-buy { background: #e74c3c; box-shadow: 0 4px 0 #c0392b; }
+        .btn-buy:active { transform: translateY(4px); box-shadow: none; }
+        .btn-sell { background: #3498db; box-shadow: 0 4px 0 #2980b9; }
+        .btn-sell:active { transform: translateY(4px); box-shadow: none; }
+
+        #msg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; flex-direction: column; display: none; z-index: 100; }
+        .result-title { font-size: 40px; margin-bottom: 20px; color: #e74c3c; font-weight: bold; }
+        .retry-btn { background: #f1c40f; color: #000; border: none; padding: 15px 30px; font-size: 18px; border-radius: 30px; margin-top: 30px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">⬅ メニューへ</a>
+
+    <div class="container">
+        <div class="status-panel">
+            <div class="top-row">
+                <div>
+                    <span class="total-label">総資産 (Score)</span><br>
+                    <span class="total-asset" id="total-asset">¥1,000,000</span>
+                </div>
+                <div class="timer" id="time-display">60</div>
+            </div>
+            <div class="details-row">
+                <div class="detail-item">
+                    <span class="d-label">現金</span>
+                    <span class="d-value" id="cash-display">¥1,000,000</span>
+                </div>
+                <div class="detail-item">
+                    <span class="d-label">株評価額 (株数)</span>
+                    <span class="d-value" id="stock-val-display">¥0 (0)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="d-label">含み損益</span>
+                    <span class="d-value" id="profit-loss">±0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="chart-container">
+            <canvas id="chartCanvas"></canvas>
+            <div id="current-price">¥1,000</div>
+        </div>
+
+        <div class="trade-panel">
+            <div class="quantity-control">
+                <input type="number" id="trade-amount" value="0" min="0">
+                <button class="q-btn" onclick="addAmount(100)">+100</button>
+                <button class="q-btn" onclick="addAmount(1000)">+1,000</button>
+                <button class="q-btn btn-max" onclick="addAmount('MAX')">MAX</button>
+                <button class="q-btn btn-clear" onclick="addAmount(0)">C</button>
+            </div>
+            <div class="controls">
+                <button class="main-btn btn-buy" onclick="trade('buy')">
+                    買う <span>Buy</span>
+                </button>
+                <button class="main-btn btn-sell" onclick="trade('sell')">
+                    売る <span>Sell</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="msg-overlay">
+        <div class="result-title">TIME UP!</div>
+        <div style="font-size: 20px;">最終資産</div>
+        <div style="font-size: 40px; color:#f1c40f; font-weight:bold;" id="final-score">---</div>
+        <div style="font-size: 14px; color:#aaa; margin-top:10px;">(含み益: <span id="final-profit">---</span>)</div>
+        <div style="font-size: 14px; color:#888; margin-top:5px;">(初期資金: ¥1,000,000)</div>
+        <button class="retry-btn" onclick="location.reload()">もう一度挑戦</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById("chartCanvas");
+    const ctx = canvas.getContext("2d");
+    const amountInput = document.getElementById("trade-amount");
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    let time = 60;
+    let cash = 1000000;
+    let stocks = 0;
+    let avgPrice = 0;
+    let price = 1000;
+    let isGameOver = false;
+
+    let priceHistory = [];
+    const maxHistory = 60;
+    for(let i=0; i<maxHistory; i++) priceHistory.push(1000);
+
+    // ★スピード変更：200ミリ秒 -> 500ミリ秒 (0.5秒)
+    const gameInterval = setInterval(updateMarket, 500);
+    const timerInterval = setInterval(updateTimer, 1000);
+
+    function updateMarket() {
+        if (isGameOver) return;
+
+        // 値幅は大きいまま維持
+        let change = (Math.random() - 0.5) * 120; 
+        
+        price += change;
+        if (price < 10) price = 10;
+
+        priceHistory.push(price);
+        if (priceHistory.length > maxHistory) priceHistory.shift();
+
+        drawChart();
+        updateUI();
+    }
+
+    function trade(type) {
+        if (isGameOver) return;
+        let amount = parseInt(amountInput.value);
+        if (isNaN(amount) || amount <= 0) return;
+
+        if (type === 'buy') {
+            let cost = amount * price;
+            if (cash >= cost) {
+                let currentTotalValue = stocks * avgPrice;
+                let buyValue = amount * price;
+                avgPrice = (currentTotalValue + buyValue) / (stocks + amount);
+
+                cash -= cost;
+                stocks += amount;
+            }
+        } else {
+            if (stocks >= amount) {
+                cash += amount * price;
+                stocks -= amount;
+                if (stocks === 0) avgPrice = 0;
+            }
+        }
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById("current-price").innerText = "¥" + Math.floor(price).toLocaleString();
+        let lastPrice = priceHistory[priceHistory.length - 2] || price;
+        let color = price >= lastPrice ? "#2ecc71" : "#e74c3c";
+        document.getElementById("current-price").style.color = color;
+
+        let stockValuation = stocks * price; 
+        let totalAsset = cash + stockValuation;
+        
+        let profit = (price - avgPrice) * stocks;
+        if (stocks === 0) profit = 0;
+
+        document.getElementById("cash-display").innerText = "¥" + Math.floor(cash).toLocaleString();
+        document.getElementById("stock-val-display").innerText = "¥" + Math.floor(stockValuation).toLocaleString() + ` (${stocks.toLocaleString()})`;
+        document.getElementById("total-asset").innerText = "¥" + Math.floor(totalAsset).toLocaleString();
+
+        const plEl = document.getElementById("profit-loss");
+        let sign = profit >= 0 ? "+" : "";
+        plEl.innerText = sign + "¥" + Math.floor(profit).toLocaleString();
+        plEl.className = "d-value " + (profit >= 0 ? "plus" : "minus");
+    }
+
+    function drawChart() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let minPrice = Math.min(...priceHistory);
+        let maxPrice = Math.max(...priceHistory);
+        let range = maxPrice - minPrice;
+        if (range === 0) { range = 100; minPrice -= 50; } 
+        
+        let padding = range * 0.1;
+        let drawMin = minPrice - padding;
+        let drawRange = (maxPrice + padding) - drawMin;
+
+        ctx.textAlign = "left"; ctx.font = "10px Arial"; ctx.fillStyle = "#64748b"; ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            let val = drawMin + (drawRange * (i / 4));
+            let y = canvas.height - ((val - drawMin) / drawRange) * canvas.height;
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            ctx.fillText("¥" + Math.floor(val), 5, y - 5);
+        }
+
+        ctx.strokeStyle = price >= (priceHistory[priceHistory.length - 2] || price) ? "#2ecc71" : "#e74c3c";
+        ctx.lineWidth = 3; ctx.beginPath();
+        for (let i = 0; i < priceHistory.length; i++) {
+            let p = priceHistory[i];
+            let x = (i / (maxHistory - 1)) * canvas.width;
+            let y = canvas.height - ((p - drawMin) / drawRange) * canvas.height;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        
+        if (stocks > 0 && avgPrice >= drawMin && avgPrice <= maxPrice + padding) {
+            let y = canvas.height - ((avgPrice - drawMin) / drawRange) * canvas.height;
+            ctx.strokeStyle = "#f1c40f"; 
+            ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            ctx.setLineDash([]); 
+            ctx.fillStyle = "#f1c40f"; ctx.fillText("取得単価", canvas.width - 50, y - 5);
+        }
+    }
+
+    function addAmount(val) {
+        if (val === 'MAX') {
+            let maxBuy = Math.floor(cash / price);
+            if (maxBuy < 1) maxBuy = 1;
+            amountInput.value = maxBuy;
+        } else if (val === 0) {
+            amountInput.value = 0;
+        } else {
+            let current = parseInt(amountInput.value);
+            if (isNaN(current)) current = 0;
+            amountInput.value = current + val;
+        }
+    }
+
+    function updateTimer() {
+        time--;
+        document.getElementById("time-display").innerText = time;
+        if (time <= 0) endGame();
+    }
+
+    function endGame() {
+        isGameOver = true;
+        clearInterval(gameInterval);
+        clearInterval(timerInterval);
+        let stockValuation = stocks * price;
+        let totalAsset = cash + stockValuation;
+        let profit = (price - avgPrice) * stocks;
+        
+        document.getElementById("final-score").innerText = "¥" + Math.floor(totalAsset).toLocaleString();
+        document.getElementById("final-profit").innerText = "¥" + Math.floor(profit).toLocaleString();
+        document.getElementById("msg-overlay").style.display = "flex";
+    }
+</script>
+</body>
+</html>
