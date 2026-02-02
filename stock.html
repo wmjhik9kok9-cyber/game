@@ -3,281 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>デイトレーダー・サバイバル v6</title>
+    <title>Ultimate Day Trader</title>
     <style>
-        body { margin: 0; background-color: #0f172a; color: #fff; font-family: sans-serif; text-align: center; overflow: hidden; }
-        .back-btn { position: absolute; top: 10px; left: 10px; text-decoration: none; background: rgba(255,255,255,0.2); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 10; }
-        
-        .container { max-width: 600px; margin: 0 auto; padding: 10px; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        /* ステータスエリア */
-        .status-panel { background: #1e293b; padding: 10px; border-radius: 10px; margin-top: 35px; display: flex; flex-direction: column; gap: 5px; }
-        
-        .top-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 5px; }
-        .total-label { font-size: 14px; color: #94a3b8; }
-        .total-asset { font-size: 26px; font-weight: bold; color: #f1c40f; }
-        .timer { font-size: 20px; font-weight: bold; color: #fff; background: #ef4444; padding: 2px 8px; border-radius: 5px; }
+        body {
+            background-color: #0d1117; color: #c9d1d9; font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none;
+        }
+        button { border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; color: white; transition: all 0.1s; }
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: translateY(2px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .details-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; }
-        .detail-item { background: #0f172a; padding: 5px; border-radius: 5px; }
-        .d-label { font-size: 10px; color: #94a3b8; display: block; }
-        .d-value { font-size: 14px; font-weight: bold; }
-        
-        .plus { color: #2ecc71; }
-        .minus { color: #e74c3c; }
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(13, 17, 23, 0.98); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
 
-        /* チャートエリア */
-        #chart-container { flex-grow: 1; position: relative; margin: 10px 0; border: 1px solid #334155; background: #020617; border-radius: 5px; }
-        canvas { width: 100%; height: 100%; display: block; }
-        #current-price { position: absolute; top: 10px; right: 10px; font-size: 28px; font-weight: bold; color: #2ecc71; text-shadow: 0 0 5px rgba(0,0,0,0.8); pointer-events: none; }
+        #warning-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.5); z-index: 95; display: none; pointer-events: none; align-items: center; justify-content: center;
+        }
+        .warning-text { font-size: 6rem; color: #fff; font-weight: bold; border: 10px solid #fff; padding: 20px; transform: rotate(-8deg); text-shadow: 0 0 30px #000; }
 
-        /* 取引パネル */
-        .trade-panel { background: #1e293b; padding: 15px; border-radius: 15px 15px 0 0; }
-        
-        .quantity-control { display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 15px; }
-        input[type="number"] { width: 90px; padding: 10px; font-size: 18px; border-radius: 5px; border: none; text-align: center; background: #334155; color: white; font-weight: bold; }
-        
-        .q-btn { background: #475569; border: none; color: white; padding: 10px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.1s; }
-        .q-btn:active { transform: scale(0.95); background: #64748b; }
-        .btn-clear { background: #64748b; color: #cbd5e1; }
-        .btn-max { color: #f1c40f; border: 1px solid #f1c40f; background: rgba(241, 196, 15, 0.1); }
+        .title-logo { font-size: 3.5rem; font-weight: bold; color: #f1c40f; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; font-style: italic; }
+        .rule-box { background: #161b22; border: 1px solid #30363d; padding: 25px; border-radius: 12px; max-width: 700px; text-align: left; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .rule-title { font-size: 1.4rem; color: #58a6ff; margin-bottom: 15px; border-bottom: 2px solid #30363d; padding-bottom: 5px; font-weight: bold; }
+        .company-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
+        .company-item { background: #0d1117; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; margin-right: 8px; color: #000; }
+        .tag-export { background: #f1c40f; } .tag-it { background: #a371f7; color: #fff; } .tag-finance { background: #3fb950; } .tag-bio { background: #f85149; color: #fff; }
+        .start-btn { padding: 18px 60px; font-size: 1.8rem; background: #238636; box-shadow: 0 6px 0 #1a6328; }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .main-btn { padding: 15px; font-size: 20px; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; transition: 0.1s; display: flex; flex-direction: column; align-items: center; }
-        .main-btn span { font-size: 12px; margin-top: 5px; opacity: 0.8; font-weight: normal;}
-        
-        .btn-buy { background: #e74c3c; box-shadow: 0 4px 0 #c0392b; }
-        .btn-buy:active { transform: translateY(4px); box-shadow: none; }
-        .btn-sell { background: #3498db; box-shadow: 0 4px 0 #2980b9; }
-        .btn-sell:active { transform: translateY(4px); box-shadow: none; }
+        header { background: #161b22; padding: 10px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .timer-box { font-size: 2.2rem; font-weight: bold; font-family: monospace; }
+        .macro-box { display: flex; gap: 20px; background: #000; padding: 10px 20px; border-radius: 6px; border: 1px solid #333; }
+        .val { color: #f1c40f; font-weight: bold; font-size: 1.2rem; }
+        .asset-info { text-align: right; }
+        .total-val { font-size: 1.5rem; color: #58a6ff; font-weight: bold; }
+        .power-val { font-size: 0.9rem; color: #3fb950; font-weight: bold; }
+        .cash-val { font-size: 0.85rem; color: #8b949e; }
 
-        #msg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; flex-direction: column; display: none; z-index: 100; }
-        .result-title { font-size: 40px; margin-bottom: 20px; color: #e74c3c; font-weight: bold; }
-        .retry-btn { background: #f1c40f; color: #000; border: none; padding: 15px 30px; font-size: 18px; border-radius: 30px; margin-top: 30px; cursor: pointer; font-weight: bold; }
+        .news-bar { background: #21262d; height: 45px; border-bottom: 1px solid #30363d; display: flex; align-items: center; overflow: hidden; position: relative; }
+        .news-label { background: #d29922; color: #000; font-weight: bold; padding: 0 20px; height: 100%; display: flex; align-items: center; z-index: 5; font-size: 1rem; }
+        .news-ticker { flex: 1; overflow: hidden; position: relative; height: 100%; }
+        .news-content { position: absolute; white-space: nowrap; font-weight: bold; font-size: 1.1rem; color: #fff; top: 10px; }
+        .history-btn { background: #30363d; height: 100%; padding: 0 15px; font-size: 0.9rem; border-left: 1px solid #444; z-index: 5; border-radius: 0; }
+
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .stock-list { width: 300px; background: #161b22; border-right: 1px solid #30363d; overflow-y: auto; }
+        .stock-item { padding: 15px; border-bottom: 1px solid #21262d; cursor: pointer; }
+        .stock-item.active { background: #1f6feb; color: white; border-left: 6px solid #f1c40f; }
+        .badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 8px; display: inline-block; color: white; }
+        .badge-h { background: #238636; margin-right: 8px; } .badge-s { background: #a371f7; }
+
+        .trade-area { flex: 1; padding: 25px; display: flex; flex-direction: column; position: relative; }
+        .chart-container { flex: 2; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 25px; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 100%; }
+        .pulse { position: absolute; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 15px #fff; display: none; transform: translate(-50%, -50%); animation: p-anim 1s infinite; }
+        @keyframes p-anim { 0% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 4; } }
+        
+        .control-panel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .trade-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .qty-selector { display: flex; gap: 8px; margin-bottom: 15px; background: #000; padding: 4px; border-radius: 6px; }
+        .qty-btn { flex: 1; background: transparent; color: #8b949e; padding: 8px; font-size: 0.9rem; border-radius: 5px; }
+        .qty-btn.active { background: #30363d; color: white; border: 1px solid #58a6ff; }
+        .action-btns { display: flex; gap: 12px; flex: 1; align-items: flex-end; }
+        .btn-buy { background: #238636; flex: 1; height: 55px; font-size: 1.2rem; }
+        .btn-sell { background: #da3633; flex: 1; height: 55px; font-size: 1.2rem; }
+        .btn-short { background: #a371f7; flex: 1; height: 55px; font-size: 1.2rem; }
+        .btn-cover { background: #d29922; flex: 1; height: 55px; font-size: 1.2rem; }
+
+        .popup { position: absolute; font-weight: bold; font-size: 3rem; animation: float 0.8s forwards; pointer-events: none; z-index: 80; text-shadow: 0 4px 8px #000; }
+        @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-70px); } }
+
+        .chart-box { width: 85%; height: 220px; background: #000; border: 2px solid #30363d; margin: 25px 0; }
+        #news-log { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-height: 75%; background: #161b22; border: 2px solid #30363d; padding: 25px; z-index: 110; display: none; flex-direction: column; box-shadow: 0 0 100px #000; }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">⬅ メニューへ</a>
 
-    <div class="container">
-        <div class="status-panel">
-            <div class="top-row">
-                <div>
-                    <span class="total-label">総資産 (Score)</span><br>
-                    <span class="total-asset" id="total-asset">¥1,000,000</span>
-                </div>
-                <div class="timer" id="time-display">60</div>
+    <div id="warning-flash"><div class="warning-text">WARNING</div></div>
+
+    <div id="start-screen" class="overlay-screen">
+        <div class="title-logo">Ultimate Day Trader</div>
+        <div class="rule-box">
+            <div class="rule-title">企業情報・攻略のヒント</div>
+            <div class="company-grid">
+                <div class="company-item"><span class="tag tag-export">輸出</span><b>安全自動車 (7203)</b><br>円安(USD↑)で上昇。</div>
+                <div class="company-item"><span class="tag tag-it">IT</span><b>AIフロンティア (9984)</b><br>金利上昇(Rate↑)に弱い。</div>
+                <div class="company-item"><span class="tag tag-export">輸出</span><b>任天ゲーム (7974)</b><br>新作ニュース有。円安銘柄。</div>
+                <div class="company-item"><span class="tag tag-finance">金融</span><b>メガバンク (8306)</b><br>利上げ(Rate↑)で利益増。</div>
+                <div class="company-item" style="grid-column: 1/-1;"><span class="tag tag-bio">医薬</span><b>ギャンブル製薬 (4502)</b><br>指標無視。新薬ニュースのみで乱高下するハイリスク銘柄。</div>
             </div>
-            <div class="details-row">
-                <div class="detail-item">
-                    <span class="d-label">現金</span>
-                    <span class="d-value" id="cash-display">¥1,000,000</span>
-                </div>
-                <div class="detail-item">
-                    <span class="d-label">株評価額 (株数)</span>
-                    <span class="d-value" id="stock-val-display">¥0 (0)</span>
-                </div>
-                <div class="detail-item">
-                    <span class="d-label">含み損益</span>
-                    <span class="d-value" id="profit-loss">±0</span>
-                </div>
-            </div>
+            <div class="rule-title">ルール・取引設定</div>
+            <ul style="font-size: 0.95rem; line-height: 1.7; color: #e6edf3;">
+                <li>初期資金<b>500万</b> / 制限時間<b>3分</b> / 単位<b>100株</b></li>
+                <li><b style="color: #238636;">現物買い</b>：手持ち現金の範囲内でのみ取引。</li>
+                <li><b style="color: #a371f7;">信用売り</b>：総資産の<b>3倍</b>までの枠で空売り可能。</li>
+                <li>資産マイナスで<b>即破産</b>。100万以下 or 個別損益-50%で<b>追証警告</b>。</li>
+            </ul>
         </div>
+        <button class="start-btn" onclick="startGame()">取引開始</button>
+    </div>
 
-        <div id="chart-container">
-            <canvas id="chartCanvas"></canvas>
-            <div id="current-price">¥1,000</div>
+    <div id="result-screen" class="overlay-screen" style="display:none;">
+        <div class="title-logo">Time's Up!</div>
+        <div style="font-size: 2.2rem; margin-bottom: 15px;">最終資産: <span id="final-asset">0</span>円</div>
+        <div class="chart-box"><canvas id="assetChart"></canvas></div>
+        <div id="rank-title" style="font-size: 3.5rem; color: #f1c40f;">称号</div>
+        <button class="start-btn" onclick="location.reload()" style="margin-top:20px;">再挑戦</button>
+    </div>
+
+    <div id="gameover-screen" class="overlay-screen" style="display:none; background: #600;">
+        <div class="title-logo" style="color:#fff;">BANKRUPTCY</div>
+        <div style="font-size: 2.5rem; margin-bottom: 30px;">破産しました...</div>
+        <button class="start-btn" onclick="location.reload()">再挑戦</button>
+    </div>
+
+    <div id="news-log">
+        <h3 style="border-bottom:2px solid #333; padding-bottom:15px;">News History</h3>
+        <div id="log-content" style="height: 350px; overflow-y: auto; background: #0d1117; padding: 15px; font-size: 1rem; line-height:1.8;"></div>
+        <button onclick="toggleLog()" style="background:#da3633; padding:15px; margin-top:15px; width:100%;">閉じる</button>
+    </div>
+
+    <header>
+        <div class="macro-box">
+            <div>USD/JPY: <span id="macro-usd" class="val">145.00</span></div>
+            <div style="border-left:1px solid #333; margin:0 5px;"></div>
+            <div>Rate: <span id="macro-rate" class="val">2.0</span>%</div>
         </div>
+        <div class="timer-box" id="timer">03:00</div>
+        <div class="asset-info">
+            <div class="total-val">資産: <span id="total-asset">5,000,000</span></div>
+            <div class="power-val">信用余力: <span id="buying-power">15,000,000</span></div>
+            <div class="cash-val">現金: <span id="cash">5,000,000</span></div>
+        </div>
+    </header>
 
-        <div class="trade-panel">
-            <div class="quantity-control">
-                <input type="number" id="trade-amount" value="0" min="0">
-                <button class="q-btn" onclick="addAmount(100)">+100</button>
-                <button class="q-btn" onclick="addAmount(1000)">+1,000</button>
-                <button class="q-btn btn-max" onclick="addAmount('MAX')">MAX</button>
-                <button class="q-btn btn-clear" onclick="addAmount(0)">C</button>
+    <div class="news-bar">
+        <div class="news-label">速報</div>
+        <div class="news-ticker"><div class="news-content" id="news-text">東京株式市場、開場。</div></div>
+        <button class="history-btn" onclick="toggleLog()">履歴</button>
+    </div>
+
+    <div class="main-container">
+        <div class="stock-list" id="stock-list"></div>
+        <div class="trade-area">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
+                <div><div id="disp-name" style="font-size:1.8rem; font-weight:bold;">---</div><div id="disp-code" style="color:#8b949e; font-size:1rem;">0000</div></div>
+                <div id="disp-price" style="font-size:2.8rem; font-weight:bold; font-family:monospace;">0</div>
             </div>
-            <div class="controls">
-                <button class="main-btn btn-buy" onclick="trade('buy')">
-                    買う <span>Buy</span>
-                </button>
-                <button class="main-btn btn-sell" onclick="trade('sell')">
-                    売る <span>Sell</span>
-                </button>
+            <div class="chart-container">
+                <canvas id="chartCanvas"></canvas>
+                <div id="pulse" class="pulse"></div>
+            </div>
+            <div class="control-panel">
+                <div class="trade-box">
+                    <div style="text-align:center; font-size:0.9rem; color:#8b949e; margin-bottom:8px;">現物: <span id="hold-cnt" style="color:#fff;">0</span>株 (平均:<span id="hold-avg">0</span>)</div>
+                    <div class="qty-selector">
+                        <button class="qty-btn" id="q-b-100" onclick="setQty('buy', 100)">100</button>
+                        <button class="qty-btn active" id="q-b-500" onclick="setQty('buy', 500)">500</button>
+                        <button class="qty-btn" id="q-b-max" onclick="setQty('buy', 'MAX')">MAX</button>
+                    </div>
+                    <div class="action-btns"><button class="btn-buy" onclick="doTrade('buy')">買</button><button class="btn-sell" onclick="doTrade('sell')">売却</button></div>
+                </div>
+                <div class="trade-box" style="border-color: #a371f733;">
+                    <div style="text-align:center; font-size:0.9rem; color:#8b949e; margin-bottom:8px;">信用: <span id="short-cnt" style="color:#fff;">0</span>株 (平均:<span id="short-avg">0</span>)</div>
+                    <div class="qty-selector">
+                        <button class="qty-btn" id="q-s-100" onclick="setQty('short', 100)">100</button>
+                        <button class="qty-btn active" id="q-s-500" onclick="setQty('short', 500)">500</button>
+                        <button class="qty-btn" id="q-s-max" onclick="setQty('short', 'MAX')">MAX</button>
+                    </div>
+                    <div class="action-btns"><button class="btn-short" onclick="doTrade('short')">空売</button><button class="btn-cover" onclick="doTrade('cover')">決済</button></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="msg-overlay">
-        <div class="result-title">TIME UP!</div>
-        <div style="font-size: 20px;">最終資産</div>
-        <div style="font-size: 40px; color:#f1c40f; font-weight:bold;" id="final-score">---</div>
-        <div style="font-size: 14px; color:#aaa; margin-top:10px;">(含み益: <span id="final-profit">---</span>)</div>
-        <div style="font-size: 14px; color:#888; margin-top:5px;">(初期資金: ¥1,000,000)</div>
-        <button class="retry-btn" onclick="location.reload()">もう一度挑戦</button>
-    </div>
+    <script>
+        const STOCKS = [
+            { id:0, code:'7203', name:'安全自動車', type:'exp', price:2000, volatility:0.005, history:[], hold:0, avg:0, short:0, sAvg:0 },
+            { id:1, code:'9984', name:'AIフロンティア', type:'it', price:5000, volatility:0.02, history:[], hold:0, avg:0, short:0, sAvg:0 },
+            { id:2, code:'7974', name:'任天ゲーム', type:'exp', price:6000, volatility:0.01, history:[], hold:0, avg:0, short:0, sAvg:0 },
+            { id:3, code:'4502', name:'ギャンブル製薬', type:'bio', price:1000, volatility:0.07, history:[], hold:0, avg:0, short:0, sAvg:0 },
+            { id:4, code:'8306', name:'メガバンク', type:'fin', price:800, volatility:0.003, history:[], hold:0, avg:0, short:0, sAvg:0 }
+        ];
+        const NEWS_DATA = [
+            { t:"米雇用統計好調。ドル買い強まる", m:{u:1.8} }, { t:"政府・日銀の為替介入。円高急進", m:{u:-2.8} },
+            { t:"日銀利上げを示唆。金利上昇", m:{r:1.0} }, { t:"緩和継続を発表。金利低下", m:{r:-1.0} },
+            { t:"安全自動車、大規模リコール。悪材料視", s:0, v:-0.06 }, { t:"AIフロンティア、海外事業の失敗。急落", s:1, v:-0.10 },
+            { t:"任天ゲーム、新型機発売を正式発表！", s:2, v:0.08 }, { t:"ギャンブル製薬、新薬承認を見送り", s:3, v:-0.25 },
+            { t:"ギャンブル製薬、新薬劇的な効果確認！", s:3, v:0.25 }, { t:"機関投資家、AIフロンティアへ空売り攻勢", s:1, v:-0.12 },
+            { t:"工場のライン一時停止の噂が流れる", s:'rnd', v:-0.03 }
+        ];
 
-<script>
-    const canvas = document.getElementById("chartCanvas");
-    const ctx = canvas.getContext("2d");
-    const amountInput = document.getElementById("trade-amount");
+        let cash = 5000000, macro = { u:145.0, r:2.0 }, activeId = 0, timeLeft = 180, aHist = [], nLog = [], qtys = { buy:500, short:500 }, event = null;
+        let aCtx = new (window.AudioContext||window.webkitAudioContext)();
 
-    function resizeCanvas() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+        function play(f, t, d) {
+            let o = aCtx.createOscillator(), g = aCtx.createGain();
+            o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.1, aCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, aCtx.currentTime+d);
+            o.connect(g); g.connect(aCtx.destination); o.start(); o.stop(aCtx.currentTime+d);
+        }
 
-    let time = 60;
-    let cash = 1000000;
-    let stocks = 0;
-    let avgPrice = 0;
-    let price = 1000;
-    let isGameOver = false;
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            STOCKS.forEach(s => { for(let i=0; i<60; i++) s.history.push(s.price); });
+            setInterval(loop, 1000); setInterval(triggerNews, 10000);
+            ticker(); update();
+        }
 
-    let priceHistory = [];
-    const maxHistory = 60;
-    for(let i=0; i<maxHistory; i++) priceHistory.push(1000);
-
-    // ★スピード変更：200ミリ秒 -> 500ミリ秒 (0.5秒)
-    const gameInterval = setInterval(updateMarket, 500);
-    const timerInterval = setInterval(updateTimer, 1000);
-
-    function updateMarket() {
-        if (isGameOver) return;
-
-        // 値幅は大きいまま維持
-        let change = (Math.random() - 0.5) * 120; 
-        
-        price += change;
-        if (price < 10) price = 10;
-
-        priceHistory.push(price);
-        if (priceHistory.length > maxHistory) priceHistory.shift();
-
-        drawChart();
-        updateUI();
-    }
-
-    function trade(type) {
-        if (isGameOver) return;
-        let amount = parseInt(amountInput.value);
-        if (isNaN(amount) || amount <= 0) return;
-
-        if (type === 'buy') {
-            let cost = amount * price;
-            if (cash >= cost) {
-                let currentTotalValue = stocks * avgPrice;
-                let buyValue = amount * price;
-                avgPrice = (currentTotalValue + buyValue) / (stocks + amount);
-
-                cash -= cost;
-                stocks += amount;
+        function loop() {
+            if(timeLeft <= 0) return;
+            timeLeft--; let m = Math.floor(timeLeft/60), s = timeLeft%60;
+            document.getElementById('timer').innerText = `0${m}:${s<10?'0':''}${s}`;
+            macro.u += (Math.random()-0.5)*0.1;
+            STOCKS.forEach(s => {
+                let v = (Math.random()-0.5)*2*s.volatility;
+                if(s.type==='exp'){ if(macro.u>146) v+=0.005; if(macro.u<144) v-=0.005; }
+                if(s.type==='fin' && macro.r>2.5) v+=0.005; if(s.type==='it' && macro.r>2.5) v-=0.008;
+                if(event && (event.s==='all' || event.s===s.id)) v+=event.v;
+                s.price = Math.max(1, Math.floor(s.price * (1+v)));
+                s.history.push(s.price); if(s.history.length>60) s.history.shift();
+            });
+            let total = calcTotal(); aHist.push(total);
+            if(total < 0) { finish(true); return; }
+            if(total < 1000000 || STOCKS.some(s => (s.hold>0 && (s.price-s.avg)/s.avg < -0.5) || (s.short>0 && (s.sAvg-s.price)/s.sAvg < -0.5))) {
+                let f = document.getElementById('warning-flash'); f.style.display = 'flex'; setTimeout(()=>f.style.display='none', 500); play(200, 'sawtooth', 0.3);
             }
-        } else {
-            if (stocks >= amount) {
-                cash += amount * price;
-                stocks -= amount;
-                if (stocks === 0) avgPrice = 0;
+            if(event) { event.d--; if(event.d<=0) event=null; }
+            renderList(); update(); drawChart();
+        }
+
+        function calcTotal() {
+            let t = cash; STOCKS.forEach(s => { t += s.hold*s.price; if(s.short>0) t += (s.sAvg-s.price)*s.short; });
+            return t;
+        }
+
+        function triggerNews() {
+            let d = NEWS_DATA[Math.floor(Math.random()*NEWS_DATA.length)];
+            if(d.m){ if(d.m.u) macro.u+=d.m.u; if(d.m.r) macro.r+=d.m.r; }
+            let sid = d.s === 'rnd' ? Math.floor(Math.random()*5) : d.s;
+            event = { s:sid, v:d.v, d:8 };
+            let txt = sid !== undefined && typeof sid === 'number' ? d.t.replace("機関投資家", STOCKS[sid].name+"へ機関") : d.t;
+            document.getElementById('news-text').innerText = txt; nPos = window.innerWidth;
+            nLog.unshift({ t:document.getElementById('timer').innerText, m:txt }); play(800, 'square', 0.1);
+        }
+
+        let nPos = 0;
+        function ticker() {
+            nPos -= 2.5; let el = document.getElementById('news-text');
+            if(nPos < -el.offsetWidth) nPos = window.innerWidth;
+            el.style.transform = `translateX(${nPos}px)`; requestAnimationFrame(ticker);
+        }
+
+        function setQty(type, v) {
+            qtys[type] = v;
+            document.querySelectorAll(`.qty-selector button`).forEach(b => {
+                if(b.id.startsWith('q-'+type.charAt(0))) b.classList.remove('active');
+            });
+            document.getElementById('q-'+type.charAt(0)+'-'+(v==='MAX'?'max':v)).classList.add('active');
+        }
+
+        function doTrade(type) {
+            let s = STOCKS[activeId], total = calcTotal();
+            let amt = 0;
+            if(type==='buy') {
+                amt = qtys.buy === 'MAX' ? Math.floor(cash/s.price/100)*100 : qtys.buy;
+                if(amt <= 0 || amt*s.price > cash) return;
+                cash -= s.price*amt; s.avg = Math.floor((s.hold*s.avg + s.price*amt)/(s.hold+amt)); s.hold += amt; popup("BUY", "#238636"); play(600, 'sine', 0.1);
+            } else if(type==='short') {
+                let power = (total * 3) - (STOCKS.reduce((a,x)=>a+(x.short)*x.price, 0));
+                amt = qtys.short === 'MAX' ? Math.floor(power/s.price/100)*100 : qtys.short;
+                if(amt <= 0 || amt*s.price > power) return;
+                s.sAvg = Math.floor((s.short*s.sAvg + s.price*amt)/(s.short+amt)); s.short += amt; popup("SHORT", "#a371f7"); play(600, 'sine', 0.1);
+            } else if(type==='sell' && s.hold > 0) {
+                let p = (s.price-s.avg)*s.hold; cash += s.price*s.hold; s.hold=0; s.avg=0; popup("EXIT "+p, p>=0?"#f1c40f":"#f85149"); play(1000, 'sine', 0.2);
+            } else if(type==='cover' && s.short > 0) {
+                let p = (s.sAvg-s.price)*s.short; cash += p; s.short=0; s.sAvg=0; popup("EXIT "+p, p>=0?"#f1c40f":"#f85149"); play(1000, 'sine', 0.2);
             }
-        }
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById("current-price").innerText = "¥" + Math.floor(price).toLocaleString();
-        let lastPrice = priceHistory[priceHistory.length - 2] || price;
-        let color = price >= lastPrice ? "#2ecc71" : "#e74c3c";
-        document.getElementById("current-price").style.color = color;
-
-        let stockValuation = stocks * price; 
-        let totalAsset = cash + stockValuation;
-        
-        let profit = (price - avgPrice) * stocks;
-        if (stocks === 0) profit = 0;
-
-        document.getElementById("cash-display").innerText = "¥" + Math.floor(cash).toLocaleString();
-        document.getElementById("stock-val-display").innerText = "¥" + Math.floor(stockValuation).toLocaleString() + ` (${stocks.toLocaleString()})`;
-        document.getElementById("total-asset").innerText = "¥" + Math.floor(totalAsset).toLocaleString();
-
-        const plEl = document.getElementById("profit-loss");
-        let sign = profit >= 0 ? "+" : "";
-        plEl.innerText = sign + "¥" + Math.floor(profit).toLocaleString();
-        plEl.className = "d-value " + (profit >= 0 ? "plus" : "minus");
-    }
-
-    function drawChart() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let minPrice = Math.min(...priceHistory);
-        let maxPrice = Math.max(...priceHistory);
-        let range = maxPrice - minPrice;
-        if (range === 0) { range = 100; minPrice -= 50; } 
-        
-        let padding = range * 0.1;
-        let drawMin = minPrice - padding;
-        let drawRange = (maxPrice + padding) - drawMin;
-
-        ctx.textAlign = "left"; ctx.font = "10px Arial"; ctx.fillStyle = "#64748b"; ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            let val = drawMin + (drawRange * (i / 4));
-            let y = canvas.height - ((val - drawMin) / drawRange) * canvas.height;
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-            ctx.fillText("¥" + Math.floor(val), 5, y - 5);
+            update(); renderList();
         }
 
-        ctx.strokeStyle = price >= (priceHistory[priceHistory.length - 2] || price) ? "#2ecc71" : "#e74c3c";
-        ctx.lineWidth = 3; ctx.beginPath();
-        for (let i = 0; i < priceHistory.length; i++) {
-            let p = priceHistory[i];
-            let x = (i / (maxHistory - 1)) * canvas.width;
-            let y = canvas.height - ((p - drawMin) / drawRange) * canvas.height;
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        function popup(t, c) {
+            let e = document.createElement('div'); e.className='popup'; e.innerText=t; e.style.color=c;
+            e.style.left = (window.innerWidth/2 + (Math.random()-0.5)*100)+'px'; e.style.top = '40%';
+            document.body.appendChild(e); setTimeout(()=>e.remove(), 800);
         }
-        ctx.stroke();
-        
-        if (stocks > 0 && avgPrice >= drawMin && avgPrice <= maxPrice + padding) {
-            let y = canvas.height - ((avgPrice - drawMin) / drawRange) * canvas.height;
-            ctx.strokeStyle = "#f1c40f"; 
-            ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-            ctx.setLineDash([]); 
-            ctx.fillStyle = "#f1c40f"; ctx.fillText("取得単価", canvas.width - 50, y - 5);
+
+        function update() {
+            let s = STOCKS[activeId], total = calcTotal();
+            document.getElementById('total-asset').innerText = Math.floor(total).toLocaleString();
+            document.getElementById('buying-power').innerText = Math.max(0, Math.floor((total*3)-STOCKS.reduce((a,x)=>a+x.short*x.price,0))).toLocaleString();
+            document.getElementById('cash').innerText = Math.floor(cash).toLocaleString();
+            document.getElementById('macro-usd').innerText = macro.u.toFixed(2);
+            document.getElementById('macro-rate').innerText = macro.r.toFixed(1);
+            document.getElementById('hold-cnt').innerText = s.hold; document.getElementById('hold-avg').innerText = s.avg.toLocaleString();
+            document.getElementById('short-cnt').innerText = s.short; document.getElementById('short-avg').innerText = s.sAvg.toLocaleString();
+            document.getElementById('disp-price').innerText = s.price.toLocaleString();
+            document.getElementById('disp-name').innerText = s.name; document.getElementById('disp-code').innerText = s.code;
         }
-    }
 
-    function addAmount(val) {
-        if (val === 'MAX') {
-            let maxBuy = Math.floor(cash / price);
-            if (maxBuy < 1) maxBuy = 1;
-            amountInput.value = maxBuy;
-        } else if (val === 0) {
-            amountInput.value = 0;
-        } else {
-            let current = parseInt(amountInput.value);
-            if (isNaN(current)) current = 0;
-            amountInput.value = current + val;
+        function renderList() {
+            let l = document.getElementById('stock-list'); l.innerHTML = "";
+            STOCKS.forEach((s, i) => {
+                let d = document.createElement('div'); d.className = `stock-item ${i===activeId?'active':''}`;
+                d.onclick = () => { activeId=i; update(); drawChart(); };
+                let diff = s.price - (s.history[s.history.length-2]||s.price);
+                d.innerHTML = `<div style="display:flex;justify-content:space-between"><b>${s.name}</b><span style="color:${diff>=0?'#3fb950':'#f85149'}">${diff>=0?'+':''}${diff}</span></div>
+                               <div style="font-size:1.1rem; font-family:monospace;">${s.price.toLocaleString()}</div>
+                               ${s.hold>0?`<span class="badge badge-h">買:${s.hold}</span>`:''}${s.short>0?`<span class="badge badge-s">売:${s.short}</span>`:''}`;
+                l.appendChild(d);
+            });
         }
-    }
 
-    function updateTimer() {
-        time--;
-        document.getElementById("time-display").innerText = time;
-        if (time <= 0) endGame();
-    }
+        function drawChart() {
+            let c = document.getElementById('chartCanvas'), ctx = c.getContext('2d'), s = STOCKS[activeId];
+            c.width = c.offsetWidth; c.height = c.offsetHeight;
+            let min = Math.min(...s.history), max = Math.max(...s.history), range = Math.max(10, max-min);
+            min -= range*0.1; max += range*0.1; range = max-min; ctx.clearRect(0,0,c.width,c.height);
+            if(s.hold>0){ ctx.strokeStyle="#238636"; ctx.setLineDash([5,5]); let y=c.height-(s.avg-min)/range*c.height; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); }
+            if(s.short>0){ ctx.strokeStyle="#a371f7"; ctx.setLineDash([5,5]); let y=c.height-(s.sAvg-min)/range*c.height; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); }
+            ctx.setLineDash([]); ctx.strokeStyle = s.price >= s.history[0] ? "#3fb950" : "#f85149"; ctx.lineWidth=3;
+            ctx.beginPath(); s.history.forEach((p, i) => { let x = i*(c.width/59), y = c.height-(p-min)/range*c.height; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+            let pulse = document.getElementById('pulse'), py = c.height-(s.price-min)/range*c.height;
+            pulse.style.display='block'; pulse.style.left = (c.width-5)+'px'; pulse.style.top = py+'px';
+        }
 
-    function endGame() {
-        isGameOver = true;
-        clearInterval(gameInterval);
-        clearInterval(timerInterval);
-        let stockValuation = stocks * price;
-        let totalAsset = cash + stockValuation;
-        let profit = (price - avgPrice) * stocks;
-        
-        document.getElementById("final-score").innerText = "¥" + Math.floor(totalAsset).toLocaleString();
-        document.getElementById("final-profit").innerText = "¥" + Math.floor(profit).toLocaleString();
-        document.getElementById("msg-overlay").style.display = "flex";
-    }
-</script>
+        function finish(b) {
+            clearInterval(loop); play(400, 'sine', 1);
+            if(b) { document.getElementById('gameover-screen').style.display='flex'; return; }
+            let total = calcTotal(); document.getElementById('final-asset').innerText = Math.floor(total).toLocaleString();
+            let rank = total<5000000 ? "破産寸前" : total<10000000 ? "新人" : total<30000000 ? "敏腕" : "伝説の相場師";
+            document.getElementById('rank-title').innerText = rank; document.getElementById('result-screen').style.display='flex';
+            drawAssetChart();
+        }
+
+        function drawAssetChart() {
+            let c = document.getElementById('assetChart'), ctx = c.getContext('2d');
+            c.width = c.offsetWidth; c.height = c.offsetHeight;
+            let min = Math.min(...aHist), max = Math.max(...aHist), r = Math.max(100, max-min);
+            ctx.strokeStyle="#f1c40f"; ctx.lineWidth=2; ctx.beginPath();
+            aHist.forEach((v, i) => { let x = i*(c.width/(aHist.length-1)), y = c.height-(v-min)/r*c.height; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+        }
+
+        function toggleLog() { let e = document.getElementById('news-log'); e.style.display = e.style.display==='flex'?'none':'flex'; document.getElementById('log-content').innerHTML = nLog.map(l=>`<div>[${l.t}] ${l.m}</div>`).join(''); }
+    </script>
 </body>
 </html>
