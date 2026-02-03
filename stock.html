@@ -2,93 +2,131 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Day Trader - Final Polish</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Day Trader - Responsive</title>
     <style>
+        /* --- 基本設定 --- */
         body {
             background-color: #0d1117; color: #c9d1d9; font-family: "Helvetica Neue", Arial, sans-serif;
             margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none;
+            -webkit-tap-highlight-color: transparent; /* スマホタップ時のハイライト消去 */
         }
-        button { border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; color: white; transition: all 0.1s; }
+        button { border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; color: white; transition: all 0.1s; touch-action: manipulation; }
         button:hover { filter: brightness(1.1); }
         button:active { transform: translateY(2px); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* --- オーバーレイ（共通） --- */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(13, 17, 23, 0.98); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            overflow-y: auto; padding: 20px; box-sizing: border-box; /* スマホでの見切れ防止 */
         }
 
-        /* スタート画面 */
-        .title-logo { font-size: 3.5rem; font-weight: bold; color: #f1c40f; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; font-style: italic; }
-        .rule-box { background: #161b22; border: 1px solid #30363d; padding: 25px; border-radius: 12px; max-width: 750px; text-align: left; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* --- スタート画面 --- */
+        .title-logo { font-size: 3.5rem; font-weight: bold; color: #f1c40f; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; font-style: italic; text-align: center; }
+        .rule-box { background: #161b22; border: 1px solid #30363d; padding: 25px; border-radius: 12px; max-width: 750px; width: 100%; text-align: left; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .rule-title { font-size: 1.4rem; color: #58a6ff; margin-bottom: 15px; border-bottom: 2px solid #30363d; padding-bottom: 5px; font-weight: bold; }
         .company-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
         .company-item { background: #0d1117; padding: 12px; border-radius: 8px; border: 1px solid #30363d; position: relative; }
         .div-badge { position: absolute; top: 10px; right: 10px; font-size: 0.75rem; background: #30363d; padding: 2px 6px; border-radius: 4px; color: #f1c40f; border: 1px solid #f1c40f; }
         .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; margin-right: 8px; color: #000; }
         .tag-export { background: #f1c40f; } .tag-it { background: #a371f7; color: #fff; } .tag-finance { background: #3fb950; } .tag-bio { background: #f85149; color: #fff; }
-        .start-btn { padding: 18px 60px; font-size: 1.8rem; background: #238636; box-shadow: 0 6px 0 #1a6328; }
+        .start-btn { padding: 18px 60px; font-size: 1.8rem; background: #238636; box-shadow: 0 6px 0 #1a6328; width: 100%; max-width: 400px; }
 
-        /* ヘッダー */
-        header { background: #161b22; padding: 10px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        /* --- ヘッダー --- */
+        header { background: #161b22; padding: 5px 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; height: 60px; }
         .timer-box { font-size: 2.2rem; font-weight: bold; font-family: monospace; }
-        .macro-box { display: flex; gap: 20px; background: #000; padding: 10px 20px; border-radius: 6px; border: 1px solid #333; }
-        .val { color: #f1c40f; font-weight: bold; font-size: 1.2rem; }
-        .asset-info { text-align: right; }
-        .total-val { font-size: 1.5rem; color: #58a6ff; font-weight: bold; transition: color 0.3s; }
-        .total-danger { color: #f85149 !important; animation: blink-text 0.5s infinite alternate; } /* 資産ピンチ時の赤文字 */
-        .power-val { font-size: 0.9rem; color: #3fb950; font-weight: bold; }
-        .cash-val { font-size: 0.85rem; color: #8b949e; }
+        .macro-box { display: flex; gap: 15px; background: #000; padding: 5px 15px; border-radius: 6px; border: 1px solid #333; align-items: center; }
+        .val { color: #f1c40f; font-weight: bold; font-size: 1.1rem; }
+        .asset-info { text-align: right; display: flex; flex-direction: column; justify-content: center; }
+        .total-val { font-size: 1.3rem; color: #58a6ff; font-weight: bold; transition: color 0.3s; }
+        .total-danger { color: #f85149 !important; animation: blink-text 0.5s infinite alternate; }
+        .power-val { font-size: 0.8rem; color: #3fb950; font-weight: bold; }
+        .cash-val { font-size: 0.75rem; color: #8b949e; }
         @keyframes blink-text { from { opacity: 1; } to { opacity: 0.5; } }
 
-        /* ニュースバー */
-        .news-bar { background: #21262d; height: 45px; border-bottom: 1px solid #30363d; display: flex; align-items: center; overflow: hidden; position: relative; }
-        .news-label { background: #d29922; color: #000; font-weight: bold; padding: 0 20px; height: 100%; display: flex; align-items: center; z-index: 5; font-size: 1rem; }
+        /* --- ニュースバー --- */
+        .news-bar { background: #21262d; height: 35px; border-bottom: 1px solid #30363d; display: flex; align-items: center; overflow: hidden; position: relative; }
+        .news-label { background: #d29922; color: #000; font-weight: bold; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5; font-size: 0.9rem; white-space: nowrap; }
         .news-ticker { flex: 1; overflow: hidden; position: relative; height: 100%; }
-        .news-content { position: absolute; white-space: nowrap; font-weight: bold; font-size: 1.1rem; color: #fff; top: 10px; }
-        .history-btn { background: #30363d; height: 100%; padding: 0 15px; font-size: 0.9rem; border-left: 1px solid #444; z-index: 5; border-radius: 0; }
+        .news-content { position: absolute; white-space: nowrap; font-weight: bold; font-size: 1rem; color: #fff; top: 6px; }
+        .history-btn { background: #30363d; height: 100%; padding: 0 15px; font-size: 0.8rem; border-left: 1px solid #444; z-index: 5; border-radius: 0; white-space: nowrap; }
 
-        /* メイン */
+        /* --- メインレイアウト --- */
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .stock-list { width: 300px; background: #161b22; border-right: 1px solid #30363d; overflow-y: auto; }
-        .stock-item { padding: 15px; border-bottom: 1px solid #21262d; cursor: pointer; position: relative; }
-        .stock-item.active { background: #1f6feb; color: white; border-left: 6px solid #f1c40f; }
         
-        /* リスト上の警告表示 */
+        /* 銘柄リスト */
+        .stock-list { width: 300px; background: #161b22; border-right: 1px solid #30363d; overflow-y: auto; }
+        .stock-item { padding: 12px; border-bottom: 1px solid #21262d; cursor: pointer; position: relative; }
+        .stock-item.active { background: #1f6feb; color: white; border-left: 6px solid #f1c40f; }
         .stock-item.danger-stock { border: 2px solid #f85149; background: rgba(248, 81, 73, 0.1); }
         .danger-icon { position: absolute; top: 5px; right: 5px; color: #f85149; font-weight: bold; font-size: 0.8rem; animation: blink-text 0.5s infinite; display: none; }
         .stock-item.danger-stock .danger-icon { display: block; }
-
-        .badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 8px; display: inline-block; color: white; }
-        .badge-h { background: #238636; margin-right: 8px; } .badge-s { background: #a371f7; }
+        .badge { font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-top: 5px; display: inline-block; color: white; }
+        .badge-h { background: #238636; margin-right: 5px; } .badge-s { background: #a371f7; }
 
         /* トレードエリア */
-        .trade-area { flex: 1; padding: 25px; display: flex; flex-direction: column; position: relative; }
-        .chart-container { flex: 2; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 25px; position: relative; overflow: hidden; }
+        .trade-area { flex: 1; padding: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .chart-container { flex: 2; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 15px; position: relative; overflow: hidden; }
         canvas { width: 100%; height: 100%; }
         .pulse { position: absolute; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 15px #fff; display: none; transform: translate(-50%, -50%); animation: p-anim 1s infinite; }
         @keyframes p-anim { 0% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 4; } }
         
-        .control-panel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-        .trade-box { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .qty-selector { display: flex; gap: 8px; margin-bottom: 15px; background: #000; padding: 4px; border-radius: 6px; }
-        .qty-btn { flex: 1; background: transparent; color: #8b949e; padding: 8px; font-size: 0.9rem; border-radius: 5px; }
+        /* 操作パネル */
+        .control-panel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; min-height: 0; }
+        .trade-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); justify-content: space-between; }
+        .qty-selector { display: flex; gap: 5px; margin-bottom: 5px; background: #000; padding: 3px; border-radius: 6px; }
+        .qty-btn { flex: 1; background: transparent; color: #8b949e; padding: 6px 0; font-size: 0.8rem; border-radius: 4px; text-align: center; }
         .qty-btn.active { background: #30363d; color: white; border: 1px solid #58a6ff; }
-        .action-btns { display: flex; gap: 12px; flex: 1; align-items: flex-end; }
-        .btn-buy { background: #238636; flex: 1; height: 55px; font-size: 1.2rem; }
-        .btn-sell { background: #da3633; flex: 1; height: 55px; font-size: 1.2rem; }
-        .btn-short { background: #a371f7; flex: 1; height: 55px; font-size: 1.2rem; }
-        .btn-cover { background: #d29922; flex: 1; height: 55px; font-size: 1.2rem; }
+        .action-btns { display: flex; gap: 8px; flex: 1; align-items: flex-end; }
+        .btn-buy, .btn-sell, .btn-short, .btn-cover { flex: 1; height: 50px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+        .btn-buy { background: #238636; } .btn-sell { background: #da3633; } .btn-short { background: #a371f7; } .btn-cover { background: #d29922; }
 
-        .popup { position: absolute; font-weight: bold; font-size: 3rem; animation: float 1s forwards; pointer-events: none; z-index: 80; text-shadow: 0 4px 8px #000; }
+        .popup { position: absolute; font-weight: bold; font-size: 2.5rem; animation: float 1s forwards; pointer-events: none; z-index: 80; text-shadow: 0 4px 8px #000; white-space: nowrap; }
         @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-70px); } }
 
         /* リザルト画面 */
         .chart-box { width: 90%; height: 250px; background: #000; border: 2px solid #30363d; margin: 10px 0 25px 0; border-radius: 8px; }
-        #news-log { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-height: 75%; background: #161b22; border: 2px solid #30363d; padding: 25px; z-index: 110; display: none; flex-direction: column; box-shadow: 0 0 100px #000; }
-        .result-container { text-align: center; animation: fadeIn 1s ease-out; }
+        #news-log { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-height: 80%; background: #161b22; border: 2px solid #30363d; padding: 20px; z-index: 110; display: none; flex-direction: column; box-shadow: 0 0 100px #000; }
+        .result-container { text-align: center; animation: fadeIn 1s ease-out; width: 100%; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        /* --- スマホ用レスポンシブ設定 --- */
+        @media (max-width: 768px) {
+            .title-logo { font-size: 2.5rem; }
+            .start-btn { padding: 15px 30px; font-size: 1.5rem; }
+            .company-grid { grid-template-columns: 1fr; } /* スタート画面の企業リストを1列に */
+            
+            /* ヘッダー調整 */
+            header { padding: 5px 10px; }
+            .timer-box { font-size: 1.5rem; }
+            .macro-box { gap: 10px; padding: 5px 8px; font-size: 0.8rem; }
+            .val { font-size: 0.9rem; }
+            .total-val { font-size: 1.1rem; }
+            .power-val { font-size: 0.7rem; }
+            .cash-val { display: none; } /* スマホでは現金表示を省略してスペース確保 */
+
+            /* レイアウトを縦並びに */
+            .main-container { flex-direction: column; }
+            
+            /* 銘柄リスト (高さ固定・スクロール) */
+            .stock-list { width: 100%; height: 160px; border-right: none; border-bottom: 1px solid #30363d; flex: none; }
+            .stock-item { padding: 8px 12px; } /* 少し詰める */
+            
+            /* トレードエリア */
+            .trade-area { padding: 10px; }
+            .chart-container { margin-bottom: 10px; }
+            
+            /* 操作パネル */
+            .control-panel { gap: 10px; }
+            .trade-box { padding: 8px; }
+            .btn-buy, .btn-sell, .btn-short, .btn-cover { height: 45px; font-size: 1rem; }
+            
+            /* リザルト調整 */
+            #final-asset { font-size: 2.5rem !important; }
+            #rank-title { font-size: 2rem !important; }
+        }
     </style>
 </head>
 <body>
@@ -98,16 +136,16 @@
         <div class="rule-box">
             <div class="rule-title">企業情報・攻略のヒント</div>
             <div class="company-grid">
-                <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-export">輸出</span><b>安全自動車 (7203)</b><br>円安(USD↑)で上昇。堅実な成長。</div>
+                <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-export">輸出</span><b>安全自動車 (7203)</b><br>円安(USD↑)で上昇。堅実。</div>
                 <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-it">IT</span><b>AIフロンティア (9984)</b><br>金利上昇(Rate↑)に弱い。</div>
-                <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-export">輸出</span><b>任天ゲーム (7974)</b><br>新作ニュース有。長期保有向き。</div>
+                <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-export">輸出</span><b>任天ゲーム (7974)</b><br>新作ニュース有。円安銘柄。</div>
                 <div class="company-item"><span class="div-badge">配当あり</span><span class="tag tag-finance">金融</span><b>メガバンク (8306)</b><br>利上げ(Rate↑)で利益増。</div>
                 <div class="company-item" style="grid-column: 1/-1;"><span class="div-badge" style="color:#8b949e; border-color:#8b949e;">配当なし</span><span class="tag tag-bio">医薬</span><b>ギャンブル製薬 (4502)</b><br>1円〜10,000円で乱高下。一発逆転か破産か。</div>
             </div>
             <div class="rule-title">ルール・取引設定</div>
-            <ul style="font-size: 0.95rem; line-height: 1.7; color: #e6edf3;">
+            <ul style="font-size: 0.9rem; line-height: 1.6; color: #e6edf3; padding-left: 20px;">
                 <li>初期資金<b>500万</b> / 制限時間<b>3分</b> / 単位<b>100株</b></li>
-                <li><b style="color: #238636;">現物買い</b>：手持ち現金の範囲内。長期で<b>配当</b>(残り2分/1分時)あり。</li>
+                <li><b style="color: #238636;">現物買い</b>：手持ち現金の範囲内。長期で<b>配当</b>あり。</li>
                 <li><b style="color: #a371f7;">信用売り</b>：総資産の<b>3倍</b>までの枠で空売り可能。</li>
                 <li><b>警告表示</b>：含み損が50%を超えるとリスト上の銘柄が<b>赤く</b>なります。</li>
             </ul>
@@ -117,11 +155,11 @@
 
     <div id="result-screen" class="overlay-screen" style="display:none;">
         <div class="result-container">
-            <div class="title-logo" style="margin-bottom:10px;">MARKET CLOSED</div>
+            <div class="title-logo" style="margin-bottom:10px; font-size: 2.5rem;">MARKET CLOSED</div>
             <div style="font-size: 1.2rem; color:#8b949e;">最終総資産</div>
             <div style="font-size: 4rem; font-weight:bold; color:#fff; text-shadow:0 0 20px #58a6ff;" id="final-asset">0</div>
             
-            <div style="font-size: 1.2rem; color:#8b949e; margin-top:20px;">資産推移チャート</div>
+            <div style="font-size: 1rem; color:#8b949e; margin-top:20px;">資産推移チャート</div>
             <div class="chart-box"><canvas id="assetChart"></canvas></div>
             
             <div style="font-size: 1.2rem; color:#8b949e;">あなたの称号</div>
@@ -133,7 +171,7 @@
 
     <div id="gameover-screen" class="overlay-screen" style="display:none; background: #600;">
         <div class="title-logo" style="color:#fff;">BANKRUPTCY</div>
-        <div style="font-size: 2.5rem; margin-bottom: 30px;">破産しました...</div>
+        <div style="font-size: 2rem; margin-bottom: 30px;">破産しました...</div>
         <button class="start-btn" onclick="location.reload()">再挑戦</button>
     </div>
 
@@ -145,14 +183,14 @@
 
     <header>
         <div class="macro-box">
-            <div>USD/JPY: <span id="macro-usd" class="val">145.00</span></div>
+            <div>USD/JPY <span id="macro-usd" class="val">145.00</span></div>
             <div style="border-left:1px solid #333; margin:0 5px;"></div>
-            <div>Rate: <span id="macro-rate" class="val">2.0</span>%</div>
+            <div>Rate <span id="macro-rate" class="val">2.0</span>%</div>
         </div>
         <div class="timer-box" id="timer">03:00</div>
         <div class="asset-info">
             <div class="total-val">資産: <span id="total-asset">5,000,000</span></div>
-            <div class="power-val">信用余力: <span id="buying-power">15,000,000</span></div>
+            <div class="power-val">余力: <span id="buying-power">15,000,000</span></div>
             <div class="cash-val">現金: <span id="cash">5,000,000</span></div>
         </div>
     </header>
@@ -166,9 +204,9 @@
     <div class="main-container">
         <div class="stock-list" id="stock-list"></div>
         <div class="trade-area">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
-                <div><div id="disp-name" style="font-size:1.8rem; font-weight:bold;">---</div><div id="disp-code" style="color:#8b949e; font-size:1rem;">0000</div></div>
-                <div id="disp-price" style="font-size:2.8rem; font-weight:bold; font-family:monospace;">0</div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
+                <div><div id="disp-name" style="font-size:1.5rem; font-weight:bold;">---</div><div id="disp-code" style="color:#8b949e; font-size:0.9rem;">0000</div></div>
+                <div id="disp-price" style="font-size:2.5rem; font-weight:bold; font-family:monospace;">0</div>
             </div>
             <div class="chart-container">
                 <canvas id="chartCanvas"></canvas>
@@ -176,7 +214,7 @@
             </div>
             <div class="control-panel">
                 <div class="trade-box">
-                    <div style="text-align:center; font-size:0.9rem; color:#8b949e; margin-bottom:8px;">現物: <span id="hold-cnt" style="color:#fff;">0</span>株 (平均:<span id="hold-avg">0</span>)</div>
+                    <div style="text-align:center; font-size:0.8rem; color:#8b949e; margin-bottom:5px;">現物: <span id="hold-cnt" style="color:#fff;">0</span>株 (平均:<span id="hold-avg">0</span>)</div>
                     <div class="qty-selector">
                         <button class="qty-btn" id="q-b-100" onclick="setQty('buy', 100)">100</button>
                         <button class="qty-btn active" id="q-b-500" onclick="setQty('buy', 500)">500</button>
@@ -185,7 +223,7 @@
                     <div class="action-btns"><button class="btn-buy" onclick="doTrade('buy')">買</button><button class="btn-sell" onclick="doTrade('sell')">売却</button></div>
                 </div>
                 <div class="trade-box" style="border-color: #a371f733;">
-                    <div style="text-align:center; font-size:0.9rem; color:#8b949e; margin-bottom:8px;">信用: <span id="short-cnt" style="color:#fff;">0</span>株 (平均:<span id="short-avg">0</span>)</div>
+                    <div style="text-align:center; font-size:0.8rem; color:#8b949e; margin-bottom:5px;">信用: <span id="short-cnt" style="color:#fff;">0</span>株 (平均:<span id="short-avg">0</span>)</div>
                     <div class="qty-selector">
                         <button class="qty-btn" id="q-s-100" onclick="setQty('short', 100)">100</button>
                         <button class="qty-btn active" id="q-s-500" onclick="setQty('short', 500)">500</button>
@@ -216,7 +254,6 @@
 
         let cash = 5000000, macro = { u:145.0, r:2.0 }, activeId = 0, timeLeft = 180, aHist = [], nLog = [], qtys = { buy:500, short:500 }, event = null;
         let aCtx = new (window.AudioContext||window.webkitAudioContext)();
-        let isFlashing = false;
 
         function play(f, t, d) {
             let o = aCtx.createOscillator(), g = aCtx.createGain();
@@ -229,8 +266,10 @@
             document.getElementById('start-screen').style.display = 'none';
             STOCKS.forEach(s => { for(let i=0; i<60; i++) s.history.push(s.price); });
             setInterval(loop, 1000); 
-            setTimeout(triggerNews, 15000); // 15秒後に最初のニュース
+            setTimeout(triggerNews, 15000); 
             ticker(); update();
+            // スマホでのCanvasサイズ調整のためリサイズイベント発火
+            window.dispatchEvent(new Event('resize'));
         }
 
         function loop() {
@@ -330,7 +369,6 @@
             let totalEl = document.getElementById('total-asset');
             totalEl.innerText = Math.floor(total).toLocaleString();
             
-            // 資産が100万を切ったら赤く点滅
             if(total < 1000000) totalEl.classList.add('total-danger');
             else totalEl.classList.remove('total-danger');
 
@@ -348,7 +386,6 @@
             let l = document.getElementById('stock-list'); l.innerHTML = "";
             STOCKS.forEach((s, i) => {
                 let d = document.createElement('div'); 
-                // 警告判定：含み損が50%超え
                 let lossRate = 0;
                 if(s.hold > 0) lossRate = (s.price - s.avg) / s.avg;
                 if(s.short > 0) lossRate = (s.sAvg - s.price) / s.sAvg;
